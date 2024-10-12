@@ -19,25 +19,28 @@ export const onCommentUpdateLogic: LogicConfig = {
       eventContext: {
         docId,
         docPath,
-        uid,
       },
+      document,
       modifiedFields,
     } = action;
 
-    const {...fields} = modifiedFields;
-    const commentDoc: DocumentData = {...fields};
+    const {post} = document.post;
+    const postOwnerId = post.createdBy.id;
 
-    const notificationPath = `users/${uid}/notifications/${docId}`;
+    const notificationPath = `users/${postOwnerId}/notifications/${docId}`;
     const notificationResultDoc: LogicResultDoc = {
       "action": "merge",
       "dstPath": notificationPath,
     };
 
+    const {...fields} = modifiedFields;
+    const commentDoc: DocumentData = {...fields};
     const commentLogicResultDoc: LogicResultDoc = {
       action: "merge",
       dstPath: docPath,
       doc: commentDoc,
     };
+
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(commentLogicResultDoc);
     logicResultDocs.push(notificationResultDoc);
