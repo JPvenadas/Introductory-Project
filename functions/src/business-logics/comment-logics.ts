@@ -17,7 +17,9 @@ export const onCommentUpdateLogic: LogicConfig = {
   logicFn: async (action) => {
     const {
       eventContext: {
+        docId,
         docPath,
+        uid,
       },
       modifiedFields,
     } = action;
@@ -25,8 +27,10 @@ export const onCommentUpdateLogic: LogicConfig = {
     const {...fields} = modifiedFields;
     const commentDoc: DocumentData = {...fields};
 
-    const notificationDoc: DocumentData = {
-
+    const notificationPath = `users/${uid}/notifications/${docId}`;
+    const notificationResultDoc: LogicResultDoc = {
+      "action": "merge",
+      "dstPath": notificationPath,
     };
 
     const commentLogicResultDoc: LogicResultDoc = {
@@ -36,6 +40,7 @@ export const onCommentUpdateLogic: LogicConfig = {
     };
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(commentLogicResultDoc);
+    logicResultDocs.push(notificationResultDoc);
 
     return {
       name: "onCommentUpdateLogic",
