@@ -55,9 +55,22 @@ export const onCommentCreateLogic: LogicConfig = {
       "doc": notificationDoc,
     };
 
+    const postSnapshot = await admin.firestore().doc(`posts/${fields.postId}`).get();
+    const postDoc = postSnapshot.data();
+    if (postDoc) {
+      postDoc["commentsCount"] = postDoc["commentsCount"] + 1;
+    }
+
+    const postLogicResultDoc: LogicResultDoc = {
+      "action": "merge",
+      "dstPath": `posts/${fields.postId}`,
+      "doc": postDoc,
+    };
+
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(commentLogicResultDoc);
     logicResultDocs.push(notificationLogicResultDoc);
+    logicResultDocs.push(postLogicResultDoc);
 
     return {
       name: "onCommentCreateLogic",
