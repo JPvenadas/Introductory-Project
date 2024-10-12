@@ -55,7 +55,9 @@ export const onCommentCreateLogic: LogicConfig = {
       "doc": notificationDoc,
     };
 
-    const postSnapshot = await admin.firestore().doc(`posts/${fields.postId}`).get();
+    const postSnapshot = await admin
+      .firestore().doc(`posts/${fields.postId}`).get();
+
     const postDoc = postSnapshot.data();
     if (postDoc) {
       postDoc["commentsCount"] = postDoc["commentsCount"] + 1;
