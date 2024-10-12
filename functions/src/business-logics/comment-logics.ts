@@ -19,9 +19,12 @@ export const onCommentDeleteLogic: LogicConfig = {
       eventContext: {
         docPath,
         docId,
-        uid,
       },
+      document,
     } = action;
+
+    const {post} = document.post;
+    const {postOwnerId} = post.createdBy.id;
 
     const commentResultDoc : LogicResultDoc = {
       "action": "delete",
@@ -29,7 +32,7 @@ export const onCommentDeleteLogic: LogicConfig = {
     };
     const notificationResultDoc : LogicResultDoc = {
       "action": "delete",
-      "dstPath": `users/${uid}/notifications/${docId}`,
+      "dstPath": `users/${postOwnerId}/notifications/${docId}`,
     };
 
     const logicResultDocs : LogicResultDoc[] = [];
