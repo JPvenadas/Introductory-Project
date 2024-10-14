@@ -70,7 +70,7 @@ export const getFileType = (mimeType: string): "image" | "video" | "misc" => {
   }
 };
 
-export const getPost(path: string){
-  return admin.firestore().doc(path).get();
-
-}
+// export const getPost(path: string){
+//   return admin.firestore().doc(path).get();
+//
+// }
