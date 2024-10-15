@@ -79,13 +79,14 @@ export const onCommentCreateLogic: LogicConfig = {
 
 
     const {...fields} = modifiedFields;
-    const commentDoc: DocumentData ={
+    const commentDoc: DocumentData = {
       ...fields,
       "@id": docId,
       "createdBy": userView,
       "createdAt": now,
       "repliesCount": 0,
     };
+
     const commentLogicResultDoc: LogicResultDoc = {
       "action": "create",
       "dstPath": docPath,
