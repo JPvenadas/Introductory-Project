@@ -4,8 +4,8 @@ import {Entity} from "../db-structure";
 import {firestore} from "firebase-admin";
 import DocumentData = firestore.DocumentData;
 import {createUserView} from "./utils";
-import {UserView} from "../types";
-import {admin} from "emberflow/lib";
+import {Notification, Post, UserView} from "../types";
+import {admin, db} from "emberflow/lib";
 
 export const onCommentCreateLogic: LogicConfig = {
 //  increment post commentsCount
@@ -23,12 +23,62 @@ export const onCommentCreateLogic: LogicConfig = {
       user,
       modifiedFields,
     } = action;
-    const {...fields} = modifiedFields;
-    const now: firestore.Timestamp = admin.firestore.Timestamp.now();
+
+
+    // increment post commentsCount
+    const commentRef = db.doc(docPath);
+    const postDocRef = commentRef.parent.parent;
+
+    if (!postDocRef) {
+      return {
+        name: "onCommentCreateLogic",
+        status: "error",
+        documents: [],
+        // message: `post ${postDocRef.id} does not exist`,
+      };
+    }
+
+    const postRef = db.doc(postDocRef.path);
+    const postDocSnapShot= await postRef.get();
+    const postDoc = postDocSnapShot.data();
+    if (postDoc === undefined) {
+      return {
+        name: "onCommentCreateLogic",
+        status: "error",
+        documents: [],
+        message: `post ${postDocRef.id} does not exist`,
+      };
+    }
+
+    postDoc.commentsCount += 1;
+
+    const postLogicResultDoc: LogicResultDoc = {
+      "action": "merge",
+      "dstPath": `posts/${postDoc["@id"]}`,
+      "doc": postDoc,
+    };
 
     const userView: UserView = createUserView(user);
+    const now: firestore.Timestamp = admin.firestore.Timestamp.now();
+
+    const notificationDoc: Notification = {
+      "@id": docId,
+      "createdBy": userView,
+      "createdAt": now.toDate(),
+      "type": "comment",
+      "read": false,
+      "post": postDoc as Post,
+    };
+
+    const {postOwner} = postDoc["createdBy"];
+    const notificationLogicResultDoc: LogicResultDoc = {
+      "action": "create",
+      "dstPath": `users/${postOwner["@id"]}/notifications/${docId}`,
+      "doc": notificationDoc,
+    };
 
 
+    const {...fields} = modifiedFields;
     const commentDoc: DocumentData ={
       ...fields,
       "@id": docId,
@@ -41,33 +91,7 @@ export const onCommentCreateLogic: LogicConfig = {
       "dstPath": docPath,
       "doc": commentDoc,
     };
-    const notificationDoc: DocumentData = {
-      "@id": docId,
-      "createdBy": userView,
-      "createdAt": now,
-      "type": "comment",
-      "read": false,
-    };
 
-    const notificationLogicResultDoc: LogicResultDoc = {
-      "action": "create",
-      "dstPath": `users/${fields.postId}/notifications/${docId}`,
-      "doc": notificationDoc,
-    };
-
-    const postSnapshot = await admin
-      .firestore().doc(`posts/${fields.postId}`).get();
-
-    const postDoc = postSnapshot.data();
-    if (postDoc) {
-      postDoc["commentsCount"] = postDoc["commentsCount"] + 1;
-    }
-
-    const postLogicResultDoc: LogicResultDoc = {
-      "action": "merge",
-      "dstPath": `posts/${fields.postId}`,
-      "doc": postDoc,
-    };
 
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(commentLogicResultDoc);
