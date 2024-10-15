@@ -3,9 +3,10 @@ import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {Entity} from "../db-structure";
 import {firestore} from "firebase-admin";
 import DocumentData = firestore.DocumentData;
-import {createUserView} from "./utils";
 import {Notification, Post, UserView} from "../types";
 import {admin, db} from "emberflow/lib";
+// eslint-disable-next-line import/namespace
+import {createUserView} from "./utils";
 
 export const onCommentCreateLogic: LogicConfig = {
 //  increment post commentsCount
@@ -34,7 +35,7 @@ export const onCommentCreateLogic: LogicConfig = {
         name: "onCommentCreateLogic",
         status: "error",
         documents: [],
-        // message: `post ${postDocRef.id} does not exist`,
+        message: `Invalid docPath at ${docPath}`,
       };
     }
 
@@ -50,12 +51,19 @@ export const onCommentCreateLogic: LogicConfig = {
       };
     }
 
-    postDoc.commentsCount += 1;
+    const {
+      "@id": postId,
+      createdBy: {
+        "@id": postOwnerId,
+      },
+    } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
       "action": "merge",
-      "dstPath": `posts/${postDoc["@id"]}`,
-      "doc": postDoc,
+      "dstPath": `posts/${postId}`,
+      "instructions": {
+        "commentsCount": "++",
+      },
     };
 
     const userView: UserView = createUserView(user);
@@ -70,17 +78,14 @@ export const onCommentCreateLogic: LogicConfig = {
       "post": postDoc as Post,
     };
 
-    const {postOwner} = postDoc["createdBy"];
     const notificationLogicResultDoc: LogicResultDoc = {
       "action": "create",
-      "dstPath": `users/${postOwner["@id"]}/notifications/${docId}`,
+      "dstPath": `users/${postOwnerId}/notifications/${docId}`,
       "doc": notificationDoc,
     };
 
-
-    const {...fields} = modifiedFields;
     const commentDoc: DocumentData ={
-      ...fields,
+      ...modifiedFields,
       "@id": docId,
       "createdBy": userView,
       "createdAt": now,
