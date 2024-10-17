@@ -1,29 +1,26 @@
 // TODO write onCommentCreateLogic
-import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {Entity} from "../db-structure";
-import {firestore} from "firebase-admin";
+import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
+import { Entity } from "../db-structure";
+import { firestore } from "firebase-admin";
 import DocumentData = firestore.DocumentData;
-import {createUserView} from "./utils";
-import {Notification, Post, UserView} from "../types";
-import {admin, db} from "emberflow/lib";
+import { Notification, Post, UserView } from "../types";
+import { admin, db } from "emberflow/lib";
+// eslint-disable-next-line import/namespace
+import { createUserView } from "./utils";
 
 export const onCommentCreateLogic: LogicConfig = {
-//  increment post commentsCount
-//  create a notification for post's author
+  //  increment post commentsCount
+  //  create a notification for post's author
   name: "onCommentCreateLogic",
   actionTypes: ["create"],
   modifiedFields: "all",
   entities: [Entity.Comment],
   logicFn: async (action) => {
     const {
-      eventContext: {
-        docId,
-        docPath,
-      },
+      eventContext: { docId, docPath },
       user,
       modifiedFields,
     } = action;
-
 
     // increment post commentsCount
     const commentRef = db.doc(docPath);
@@ -34,12 +31,12 @@ export const onCommentCreateLogic: LogicConfig = {
         name: "onCommentCreateLogic",
         status: "error",
         documents: [],
-        // message: `post ${postDocRef.id} does not exist`,
+        message: `Invalid docPath at ${docPath}`,
       };
     }
 
     const postRef = db.doc(postDocRef.path);
-    const postDocSnapShot= await postRef.get();
+    const postDocSnapShot = await postRef.get();
     const postDoc = postDocSnapShot.data();
     if (postDoc === undefined) {
       return {
@@ -50,12 +47,17 @@ export const onCommentCreateLogic: LogicConfig = {
       };
     }
 
-    postDoc.commentsCount += 1;
+    const {
+      "@id": postId,
+      createdBy: { "@id": postOwnerId },
+    } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
-      "action": "merge",
-      "dstPath": `posts/${postDoc["@id"]}`,
-      "doc": postDoc,
+      action: "merge",
+      dstPath: `posts/${postId}`,
+      instructions: {
+        commentsCount: "++",
+      },
     };
 
     const userView: UserView = createUserView(user);
@@ -63,36 +65,32 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const notificationDoc: Notification = {
       "@id": docId,
-      "createdBy": userView,
-      "createdAt": now.toDate(),
-      "type": "comment",
-      "read": false,
-      "post": postDoc as Post,
+      createdBy: userView,
+      createdAt: now.toDate(),
+      type: "comment",
+      read: false,
+      post: postDoc as Post,
     };
 
-    const {postOwner} = postDoc["createdBy"];
     const notificationLogicResultDoc: LogicResultDoc = {
-      "action": "create",
-      "dstPath": `users/${postOwner["@id"]}/notifications/${docId}`,
-      "doc": notificationDoc,
+      action: "create",
+      dstPath: `users/${postOwnerId}/notifications/${docId}`,
+      doc: notificationDoc,
     };
 
-
-    const {...fields} = modifiedFields;
     const commentDoc: DocumentData = {
-      ...fields,
+      ...modifiedFields,
       "@id": docId,
-      "createdBy": userView,
-      "createdAt": now,
-      "repliesCount": 0,
+      createdBy: userView,
+      createdAt: now,
+      repliesCount: 0,
     };
 
     const commentLogicResultDoc: LogicResultDoc = {
-      "action": "create",
-      "dstPath": docPath,
-      "doc": commentDoc,
+      action: "create",
+      dstPath: docPath,
+      doc: commentDoc,
     };
-
 
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(commentLogicResultDoc);
