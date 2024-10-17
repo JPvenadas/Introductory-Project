@@ -1,12 +1,12 @@
 // TODO write onCommentCreateLogic
-import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
+import {LogicConfig, LogicResultDoc } from "emberflow/lib/types";
 import { Entity } from "../db-structure";
 import { firestore } from "firebase-admin";
 import DocumentData = firestore.DocumentData;
-import { Notification, Post, UserView } from "../types";
+import {Notification, Post, UserView} from "../types";
 import { admin, db } from "emberflow/lib";
 // eslint-disable-next-line import/namespace
-import { createUserView } from "./utils";
+import {createUserView} from "./utils";
 
 export const onCommentCreateLogic: LogicConfig = {
   //  increment post commentsCount
@@ -17,7 +17,7 @@ export const onCommentCreateLogic: LogicConfig = {
   entities: [Entity.Comment],
   logicFn: async (action) => {
     const {
-      eventContext: { docId, docPath },
+      eventContext: {docId, docPath},
       user,
       modifiedFields,
     } = action;
@@ -49,7 +49,9 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const {
       "@id": postId,
-      createdBy: { "@id": postOwnerId },
+      createdBy: {
+        "@id": postOwnerId,
+      },
     } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
@@ -81,9 +83,9 @@ export const onCommentCreateLogic: LogicConfig = {
     const commentDoc: DocumentData = {
       ...modifiedFields,
       "@id": docId,
-      createdBy: userView,
-      createdAt: now,
-      repliesCount: 0,
+      "createdBy": userView,
+      "createdAt": now,
+      "repliesCount": 0,
     };
 
     const commentLogicResultDoc: LogicResultDoc = {
