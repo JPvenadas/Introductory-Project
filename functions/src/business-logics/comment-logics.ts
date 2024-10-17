@@ -1,5 +1,6 @@
 import {Entity} from "../db-structure";
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
+import {db} from "emberflow/lib";
 // TODO write onCommentCreateLogic
 //  increment post commentsCount
 //  create a notification for post's author
@@ -20,11 +21,36 @@ export const onCommentDeleteLogic: LogicConfig = {
         docPath,
         docId,
       },
-      document,
     } = action;
 
-    const {post} = document.post;
-    const {postOwnerId} = post.createdBy.id;
+    const commentRef = db.doc(docPath);
+    const postDocRef = commentRef.parent.parent;
+    if (!postDocRef) {
+      return {
+        name: "onCommentDeleteLogic",
+        status: "error",
+        documents: [],
+        message: `Invalid post path at ${commentRef.path} `,
+      };
+    }
+    const postRef = db.doc(postDocRef.path);
+    const postSnapshot = await postRef.get();
+    const postDoc = postSnapshot.data();
+
+    if (postDoc === undefined) {
+      return {
+        name: "onCommentDeleteLogic",
+        status: "error",
+        documents: [],
+        message: `Post ${postDocRef.id} not found`,
+      };
+    }
+
+    const {
+      createdBy: {
+        "@id": postOwnerId,
+      },
+    } = postDoc;
 
     const commentResultDoc : LogicResultDoc = {
       "action": "delete",
