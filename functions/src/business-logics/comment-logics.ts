@@ -24,8 +24,9 @@ export const onCommentUpdateLogic: LogicConfig = {
       modifiedFields,
     } = action;
 
-    const {post} = document.post;
-    const postOwnerId = post.createdBy.id;
+    const {
+      "@id": postOwnerId,
+    } = document.post;
 
     const notificationPath = `users/${postOwnerId}/notifications/${docId}`;
     const notificationResultDoc: LogicResultDoc = {
@@ -33,8 +34,7 @@ export const onCommentUpdateLogic: LogicConfig = {
       "dstPath": notificationPath,
     };
 
-    const {...fields} = modifiedFields;
-    const commentDoc: DocumentData = {...fields};
+    const commentDoc: DocumentData = {...modifiedFields};
     const commentLogicResultDoc: LogicResultDoc = {
       action: "merge",
       dstPath: docPath,
