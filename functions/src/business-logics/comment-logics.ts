@@ -2,6 +2,7 @@ import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {Entity} from "../db-structure";
 import {firestore} from "firebase-admin";
 import DocumentData = firestore.DocumentData;
+import {db} from "emberflow/lib";
 // TODO write onCommentCreateLogic
 //  increment post commentsCount
 //  create a notification for post's author
@@ -23,6 +24,29 @@ export const onCommentUpdateLogic: LogicConfig = {
       document,
       modifiedFields,
     } = action;
+
+    const commentRef = db.doc(docPath);
+    const postDocRef = commentRef.parent.parent;
+    if (!postDocRef) {
+      return {
+        name: "onCommentUpdateLogic",
+        status: "error",
+        documents: [],
+        message: `Invalid path at ${commentRef.path} `,
+      };
+    }
+
+    const postRef = db.doc(postDocRef.path);
+    const postSnapshot = await postRef.get();
+    const postDoc = postSnapshot.data();
+    if (postDoc === undefined) {
+      return {
+        name: "onCommentUpdateLogic",
+        status: "error",
+        documents: [],
+        message: `Post not found at ${postRef.path}`,
+      };
+    }
 
     const {
       "@id": postOwnerId,
