@@ -3,7 +3,7 @@ import {LogicConfig, LogicResultDoc } from "emberflow/lib/types";
 import { Entity } from "../db-structure";
 import { firestore } from "firebase-admin";
 import DocumentData = firestore.DocumentData;
-import {Notification, Post, UserView} from "../types";
+import {Notification, Post, PostView, UserView} from "../types";
 import { admin, db } from "emberflow/lib";
 // eslint-disable-next-line import/namespace
 import {createUserView} from "./utils";
@@ -67,11 +67,11 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const notificationDoc: Notification = {
       "@id": docId,
-      createdBy: userView,
-      createdAt: now.toDate(),
-      type: "comment",
-      read: false,
-      post: postDoc as Post,
+      "createdBy": userView,
+      "createdAt": now.toDate(),
+      "type": "comment",
+      "read": false,
+      "post": postDoc as Post,
     };
 
     const notificationLogicResultDoc: LogicResultDoc = {
@@ -80,12 +80,19 @@ export const onCommentCreateLogic: LogicConfig = {
       doc: notificationDoc,
     };
 
+    const postView: PostView = {
+      "@id": postId,
+      "createdAt": postDoc.createdAt,
+      "createdBy": postDoc.createdBy,
+    };
+
     const commentDoc: DocumentData = {
       ...modifiedFields,
       "@id": docId,
       "createdBy": userView,
       "createdAt": now,
       "repliesCount": 0,
+      "post": postView,
     };
 
     const commentLogicResultDoc: LogicResultDoc = {
