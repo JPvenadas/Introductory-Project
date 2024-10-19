@@ -1,12 +1,10 @@
 // import {firestore} from "firebase-admin";
 import {onCommentCreateLogic} from "../../src/business-logics/comment-logics";
-// import Timestamp = firestore.Timestamp;
 import {admin} from "emberflow/lib";
 import {initTestEmberflow} from "../init-test-emberflow";
 import {UserView} from "../../src/types";
 import {Action, EventContext} from "emberflow/lib/types";
-// import * as utils from "../../src/business-logics/utils";
-// import {onPostCreateLogic} from "../../src/business-logics/post-logics";
+import {firestore} from "firebase-admin";
 
 initTestEmberflow();
 
@@ -40,6 +38,39 @@ describe("onCommentCreateLogic", () => {
     timeCreated: admin.firestore.Timestamp.now(),
     modifiedFields: modifiedFields,
   };
+  let dbDocSpy: jest.SpyInstance;
+  beforeEach(() => {
+    dbDocSpy = jest.spyOn(admin.firestore(), "doc")
+      .mockImplementation((docPath) =>{
+        const dirs = docPath.split("/");
+        const postId = dirs[-1];
+
+        if (dirs.length !==4) {
+          return undefined;
+        }
+
+        return {
+          parent: {
+            parent: {
+              get: jest.fn().mockResolvedValue({
+                data: jest.fn().mockReturnValue({
+                  "@id": "postId",
+                  "createdBy": {
+                    "@id": userId,
+                  },
+                }),
+              }),
+            },
+          },
+        } as unknown as firestore.DocumentReference;
+      }
+      );
+  });
+
+
+  afterEach(()=> {
+    jest.restoreAllMocks();
+  });
 
   // const expectedPostDoc = {
   //   "@id": commentId,

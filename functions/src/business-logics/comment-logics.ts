@@ -67,11 +67,11 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const notificationDoc: Notification = {
       "@id": docId,
-      createdBy: userView,
-      createdAt: now.toDate(),
-      type: "comment",
-      read: false,
-      post: postDoc as Post,
+      "createdBy": userView,
+      "createdAt": now.toDate(),
+      "type": "comment",
+      "read": false,
+      "post": postDoc as Post,
     };
 
     const notificationLogicResultDoc: LogicResultDoc = {
