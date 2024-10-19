@@ -1,13 +1,9 @@
 import {Entity} from "../db-structure";
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {db} from "emberflow/lib";
-// TODO write onCommentCreateLogic
-import {LogicConfig, LogicResultDoc } from "emberflow/lib/types";
-import { Entity } from "../db-structure";
-import { firestore } from "firebase-admin";
+import {firestore} from "firebase-admin";
 import DocumentData = firestore.DocumentData;
 import {Notification, Post, PostView, UserView} from "../types";
-import { admin, db } from "emberflow/lib";
+import {admin, db} from "emberflow/lib";
 // eslint-disable-next-line import/namespace
 import {createUserView} from "./utils";
 
@@ -132,37 +128,25 @@ export const onCommentDeleteLogic: LogicConfig = {
         docPath,
         docId,
       },
+      document: {
+        post,
+      },
     } = action;
 
-    const commentRef = db.doc(docPath);
-    const postDocRef = commentRef.parent.parent;
-    if (!postDocRef) {
-      return {
-        name: "onCommentDeleteLogic",
-        status: "error",
-        documents: [],
-        message: `Invalid post path at ${commentRef.path} `,
-      };
-    }
-    const postRef = db.doc(postDocRef.path);
-    const postSnapshot = await postRef.get();
-    const postDoc = postSnapshot.data();
-
-    if (postDoc === undefined) {
-      return {
-        name: "onCommentDeleteLogic",
-        status: "error",
-        documents: [],
-        message: `Post ${postDocRef.id} not found`,
-      };
-    }
-
     const {
+      "@id": postId,
       createdBy: {
         "@id": postOwnerId,
       },
-    } = postDoc;
+    } = post;
 
+    const postLogicResultDoc: LogicResultDoc = {
+      action: "merge",
+      dstPath: `posts/${postId}`,
+      instructions: {
+        commentsCount: "--",
+      },
+    };
     const commentResultDoc : LogicResultDoc = {
       "action": "delete",
       "dstPath": docPath,
@@ -175,6 +159,7 @@ export const onCommentDeleteLogic: LogicConfig = {
     const logicResultDocs : LogicResultDoc[] = [];
     logicResultDocs.push(commentResultDoc);
     logicResultDocs.push(notificationResultDoc);
+    logicResultDocs.push(postLogicResultDoc);
 
     return {
       name: "onCommentDeleteLogic",
