@@ -69,3 +69,4 @@ export const getFileType = (mimeType: string): "image" | "video" | "misc" => {
     return "misc";
   }
 };
+
