@@ -5,6 +5,7 @@ import {initTestEmberflow} from "../init-test-emberflow";
 import {UserView} from "../../src/types";
 import {Action, EventContext} from "emberflow/lib/types";
 import {firestore} from "firebase-admin";
+import * as utils from "../../src/business-logics/utils";
 
 initTestEmberflow();
 
@@ -39,15 +40,11 @@ describe("onCommentCreateLogic", () => {
     modifiedFields: modifiedFields,
   };
   let dbDocSpy: jest.SpyInstance;
+  let createUserViewSpy: jest.SpyInstance;
   beforeEach(() => {
     dbDocSpy = jest.spyOn(admin.firestore(), "doc")
-      .mockImplementation((docPath) =>{
-        const dirs = docPath.split("/");
-        const postId = dirs[-1];
-
-        if (dirs.length !==4) {
-          return undefined;
-        }
+      .mockImplementation(() =>{
+        // const dirs = docPath.split("/");
 
         return {
           parent: {
@@ -65,6 +62,16 @@ describe("onCommentCreateLogic", () => {
         } as unknown as firestore.DocumentReference;
       }
       );
+
+    createUserViewSpy = jest.spyOn(utils, "createUserView")
+      .mockImplementation((user) => {
+        return {
+          "@id": user["@id"],
+          "firstName": user.firstName,
+          "lastName": user.lastName,
+          "avatarUrl": user.avatarUrl,
+        } as UserView;
+      });
   });
 
 
@@ -86,9 +93,16 @@ describe("onCommentCreateLogic", () => {
     const result = await onCommentCreateLogic.logicFn(action);
     console.log(result);
 
-    // expect(result.name).toEqual("onCommentCreateLogic");
-    // expect(result.status).toEqual("finished");
-    // expect(result.documents.length).toBe(3);
+
+    expect(result.name).toEqual("onCommentCreateLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(3);
+  });
+
+  it("tests", async () => {
+    await onCommentCreateLogic.logicFn(action);
+    expect(dbDocSpy).toHaveBeenCalledTimes(1);
+    expect(createUserViewSpy).toHaveBeenCalledTimes(1);
   });
 });
 
