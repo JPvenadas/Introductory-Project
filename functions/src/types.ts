@@ -55,6 +55,11 @@ export interface Post extends BaseEntity {
   comments?: Comment[];
 }
 
+export interface CommentView extends BaseEntity {
+  createdAt: Date;
+  createdBy: UserView;
+}
+
 export interface Comment extends BaseEntity {
   createdAt: Date;
   createdBy: UserView;
@@ -67,6 +72,7 @@ export interface Reply extends BaseEntity {
   createdAt: Date;
   createdBy: UserView;
   content: string;
+  comment: CommentView;
 }
 
 type NotificationType = "like" | "comment" | "reply" | "share";
