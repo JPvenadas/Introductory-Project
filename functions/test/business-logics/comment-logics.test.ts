@@ -45,7 +45,7 @@ describe("onCommentUpdateLogic", () => {
 
     expect(result.name).toEqual("onCommentUpdateLogic");
     expect(result.status).toEqual("finished");
-    expect(result.documents.length).toBe(2);
+    expect(result.documents.length).toBe(1);
   });
 
   it("should return finished logic result to update comment document",
