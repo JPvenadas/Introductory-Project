@@ -42,6 +42,58 @@ export const onCommentUpdateLogic: LogicConfig = {
   },
 };
 
-// TODO write onCommentDeleteLogic
-//  decrement post commentsCount
-//  delete the notification for post's author
+export const onCommentDeleteLogic: LogicConfig = {
+  name: "onCommentDeleteLogic",
+  actionTypes: ["delete"],
+  modifiedFields: "all",
+  entities: [Entity.Comment],
+  logicFn: async (action) => {
+    const {
+      eventContext: {
+        docId,
+        docPath,
+      },
+      document: {
+        post,
+      },
+    } = action;
+
+    const {
+      "@id": postId,
+      createdBy: {
+        "@id": postAuthorId,
+      },
+    } = post;
+
+    const postDocPath = `posts/${postId}`;
+    const postLogicResultDoc: LogicResultDoc = {
+      "action": "merge",
+      "dstPath": postDocPath,
+      "instructions": {
+        "commentsCount": "--",
+      },
+    };
+
+    const notificationDocPath = `users/${postAuthorId}/notifications/${docId}`;
+    const notificationLogicResultDoc: LogicResultDoc = {
+      "action": "delete",
+      "dstPath": notificationDocPath,
+    };
+
+    const commentLogicResultDoc: LogicResultDoc = {
+      "action": "delete",
+      "dstPath": docPath,
+    };
+
+    const logicResultDocs: LogicResultDoc[] = [];
+    logicResultDocs.push(commentLogicResultDoc);
+    logicResultDocs.push(postLogicResultDoc);
+    logicResultDocs.push(notificationLogicResultDoc);
+
+    return {
+      name: "onCommentDeleteLogic",
+      status: "finished",
+      documents: logicResultDocs,
+    };
+  },
+};
