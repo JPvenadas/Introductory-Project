@@ -1,4 +1,4 @@
-import {Entity} from "emberflow/lib";
+import {Entity} from "../db-structure";
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {DocumentData} from "firebase-admin/firestore";
 
