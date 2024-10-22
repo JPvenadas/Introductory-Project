@@ -1,11 +1,7 @@
-// TODO write onLikeLogic
-//  increment post likesCount
-//  add user's userView to post's likes collection
-//  create a notification for post's author
-
 import {admin, db} from "emberflow/lib";
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {createUserView} from "./utils";
+import {Post, PostView} from "../types";
 
 export const onLikeLogic: LogicConfig = {
   name: "onLikeLogic",
@@ -33,7 +29,7 @@ export const onLikeLogic: LogicConfig = {
     }
 
     const postDocSnapshot = await postDocRef.get();
-    const postDoc = postDocSnapshot.data();
+    const postDoc = postDocSnapshot.data() as Post;
     if (!postDoc) {
       return {
         name: "onLikeLogic",
@@ -42,6 +38,13 @@ export const onLikeLogic: LogicConfig = {
         message: `Post ${postDocRef.id} does not exist`,
       };
     }
+
+    const {
+      "@id": postId,
+      createdBy: {
+        "@id": postAuthorId,
+      },
+    } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
       action: "merge",
@@ -58,7 +61,7 @@ export const onLikeLogic: LogicConfig = {
       user: userView,
     };
 
-    const likeDocPath = `posts/${postDocRef.id}/likes/${docId}`;
+    const likeDocPath = `posts/${postId}/likes/${docId}`;
     const likeLogicResultDoc: LogicResultDoc = {
       action: "create",
       dstPath: likeDocPath,
@@ -69,13 +72,10 @@ export const onLikeLogic: LogicConfig = {
       createdBy: userView,
       createdAt: now.toDate(),
       type: "like",
-      post: {
-        id: postDocRef.id,
-        content: postDoc.content,
-      },
+      post: postDoc as PostView,
     };
 
-    const notifDocPath = `users/${postDoc.createdBy.id}/notifications/${docId}`;
+    const notifDocPath = `users/${postAuthorId}/notifications/${docId}`;
     const notificationLogicResultDoc: LogicResultDoc = {
       action: "create",
       dstPath: notifDocPath,
