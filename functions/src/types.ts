@@ -54,13 +54,17 @@ export interface Post extends BaseEntity {
   likes?: UserView[];
   comments?: Comment[];
 }
-
+export interface PostView extends BaseEntity {
+  createdAt: Date;
+  createdBy: UserView;
+}
 export interface Comment extends BaseEntity {
   createdAt: Date;
   createdBy: UserView;
   content: string;
   repliesCount: number;
   replies?: Reply[];
+  post: PostView
 }
 
 export interface Reply extends BaseEntity {
