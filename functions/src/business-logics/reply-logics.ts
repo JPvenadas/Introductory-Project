@@ -11,6 +11,7 @@
 
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {Entity} from "../db-structure";
+import {db} from "emberflow/lib";
 
 export const onReplyDeleteLogic: LogicConfig = {
   name: "onReplyDeleteLogic",
@@ -38,6 +39,9 @@ export const onReplyDeleteLogic: LogicConfig = {
         "@id": commentAuthorId,
       },
     } = commentDoc;
+
+    const replyRef = db.doc(docPath);
+    const commentRef = replyRef.parent.parent;
 
     const notificationDocPath = `users/${commentAuthorId}/notifications/${commentId}`;
     const notificationLogicResultDoc: LogicResultDoc = {
