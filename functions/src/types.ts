@@ -55,11 +55,6 @@ export interface Post extends BaseEntity {
   comments?: Comment[];
 }
 
-export interface CommentView extends BaseEntity {
-  createdAt: Date;
-  createdBy: UserView;
-}
-
 export interface PostView extends BaseEntity {
   createdAt: Date;
   createdBy: UserView;
