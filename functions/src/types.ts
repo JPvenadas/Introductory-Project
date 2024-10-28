@@ -78,7 +78,6 @@ export interface Reply extends BaseEntity {
   createdAt: Date;
   createdBy: UserView;
   content: string;
-  comment: CommentView;
 }
 
 type NotificationType = "like" | "comment" | "reply" | "share";
