@@ -24,15 +24,45 @@ export const onReplyDeleteLogic: LogicConfig = {
         docPath,
       },
       modifiedFields,
-      document: {
-        comment: commentDoc,
-      },
     } = action;
 
     const replyDoc = {
       ...modifiedFields,
     };
 
+
+    const replyRef = db.doc(docPath);
+    const commentDocRef = replyRef.parent.parent;
+
+    if (!commentDocRef) {
+      return {
+        "name": "onReplyDeleteLogic",
+        "status": "error",
+        "documents": [],
+        "message": `Invalid docPath at ${docPath}`,
+      };
+    }
+
+    const commentRef = db.doc(commentDocRef.path);
+    const commentDocSnapshot = await commentRef.get();
+    const commentDoc = commentDocSnapshot.data();
+
+    if (commentDoc === undefined) {
+      return {
+        "name": "onReplyDeleteLogic",
+        "status": "error",
+        "documents": [],
+        "message": `Comment ${commentDocRef.id} does not exist`,
+      };
+    }
+
+    const commentLogicResultDoc: LogicResultDoc = {
+      "action": "merge",
+      "dstPath": commentDocRef.path,
+      "instructions": {
+        "repliesCount": "--",
+      },
+    };
     const {
       "@id": commentId,
       "createdBy": {
@@ -40,10 +70,9 @@ export const onReplyDeleteLogic: LogicConfig = {
       },
     } = commentDoc;
 
-    const replyRef = db.doc(docPath);
-    const commentRef = replyRef.parent.parent;
+    const notificationDocPath = `users/
+    ${commentAuthorId}/notifications/${commentId}`;
 
-    const notificationDocPath = `users/${commentAuthorId}/notifications/${commentId}`;
     const notificationLogicResultDoc: LogicResultDoc = {
       "action": "delete",
       "dstPath": notificationDocPath,
@@ -56,6 +85,7 @@ export const onReplyDeleteLogic: LogicConfig = {
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(replyLogicResultDoc);
     logicResultDocs.push(notificationLogicResultDoc);
+    logicResultDocs.push(commentLogicResultDoc);
 
     return {
       "name": "onReplyDeleteLogic",
