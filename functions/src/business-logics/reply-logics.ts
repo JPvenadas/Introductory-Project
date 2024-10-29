@@ -43,8 +43,8 @@ export const onReplyDeleteLogic: LogicConfig = {
       };
     }
 
-    const commentRef = db.doc(commentDocRef.path);
-    const commentDocSnapshot = await commentRef.get();
+    // const commentRef = db.doc(commentDocRef.path);
+    const commentDocSnapshot = await commentDocRef.get();
     const commentDoc = commentDocSnapshot.data();
 
     if (commentDoc === undefined) {
