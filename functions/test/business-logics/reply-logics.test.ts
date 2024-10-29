@@ -70,10 +70,10 @@ describe("onReplyDeleteLogic", () => {
 
       if (commentDocPathId === "nonExistentCommentId") {
         return {
-          get: jest.fn().mockResolvedValue({data: () => null}),
           parent: {
             parent: {
               path: `posts/${postId}/comments/${commentId}`,
+              get: jest.fn().mockResolvedValue({data: () => null}),
             },
           },
         } as unknown as DocumentReference<DocumentData>;
@@ -81,12 +81,12 @@ describe("onReplyDeleteLogic", () => {
 
       return {
 
-        get: jest.fn().mockResolvedValue({
-          data: () => comment,
-        }),
         parent: {
           parent: {
             path: `posts/${postId}/comments/${commentDocPathId}`,
+            get: jest.fn().mockResolvedValue({
+              data: () => comment,
+            }),
           },
         },
       } as unknown as DocumentReference<DocumentData>;
