@@ -35,8 +35,8 @@ export const onCommentCreateLogic: LogicConfig = {
       };
     }
 
-    const postRef = db.doc(postDocRef.path);
-    const postDocSnapShot = await postRef.get();
+    // const postRef = db.doc(postDocRef.path);
+    const postDocSnapShot = await postDocRef.get();
     const postDoc = postDocSnapShot.data();
     if (postDoc === undefined) {
       return {
