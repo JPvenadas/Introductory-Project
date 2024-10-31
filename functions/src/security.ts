@@ -16,7 +16,7 @@ const allAllowed: SecurityFn = async (
 };
 
 // A security function prevents users from updating their username
-const userSecurityFn: SecurityFn = async (
+export const userSecurityFn: SecurityFn = async (
   entity,
   docPath,
   doc,
