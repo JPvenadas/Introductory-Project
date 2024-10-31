@@ -1,5 +1,5 @@
 import {Entity} from "./db-structure";
-import {SecurityConfig, SecurityFn} from "emberflow/lib/types";
+import {SecurityConfig, SecurityFn, SecurityResult} from "emberflow/lib/types";
 
 // A security function that allows all actions
 const allAllowed: SecurityFn = async (
@@ -15,9 +15,35 @@ const allAllowed: SecurityFn = async (
   };
 };
 
+// A security function prevents users from updating their username
+const userSecurityFn: SecurityFn = async (
+  entity,
+  docPath,
+  doc,
+  actionType,
+  modifiedFields,
+) => {
+  const rejected: SecurityResult = {
+    status: "rejected",
+  };
+  const allowed: SecurityResult = {
+    status: "allowed",
+  };
+
+  if (actionType === "update") {
+    const fields: string[] = Object.keys(modifiedFields);
+    if (fields.includes("username")) {
+      rejected["message"] = "Cannot update username";
+      return rejected;
+    }
+  }
+
+  return allowed;
+};
+
 export const securityConfig: SecurityConfig = {
   // Implement your security functions for each entity here
-  [Entity.User]: allAllowed,
+  [Entity.User]: userSecurityFn,
   [Entity.Notification]: allAllowed,
   [Entity.Post]: allAllowed,
   [Entity.Comment]: allAllowed,
