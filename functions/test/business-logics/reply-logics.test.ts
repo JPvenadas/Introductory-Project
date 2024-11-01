@@ -34,6 +34,7 @@ const comment: Comment = {
   "post": post,
 };
 
+
 describe("onReplyDeleteLogic", () => {
   const replyId = "replyId";
   const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
@@ -112,7 +113,30 @@ describe("onReplyDeleteLogic", () => {
 
       expect(result.documents[0]).toStrictEqual({
         action: "delete",
+        doc: {},
         dstPath: docPath,
       });
     });
+  it("should return finished logic result to delete notification document",
+    async () => {
+      const result = await onReplyDeleteLogic.logicFn(action);
+
+      expect(result.documents[1]).toStrictEqual({
+        action: "delete",
+        dstPath: `users/\n    ${userId}/notifications/${commentId}`,
+      });
+    });
+  it("should return finished logic result to decrement comment count " +
+    "in comment document",
+  async () => {
+    const result = await onReplyDeleteLogic.logicFn(action);
+
+    expect(result.documents[2]).toStrictEqual({
+      action: "merge",
+      dstPath: `posts/${postId}/comments/${commentId}`,
+      instructions: {
+        repliesCount: "--",
+      },
+    });
+  });
 });

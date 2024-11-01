@@ -9,9 +9,9 @@
 //  decrement comment repliesCount
 //  delete the notification for comment's author
 
-import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
-import { Entity } from "../db-structure";
-import { db } from "emberflow/lib";
+import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
+import {Entity} from "../db-structure";
+import {db} from "emberflow/lib";
 
 export const onReplyDeleteLogic: LogicConfig = {
   name: "onReplyDeleteLogic",
@@ -20,7 +20,7 @@ export const onReplyDeleteLogic: LogicConfig = {
   entities: [Entity.Reply],
   logicFn: async (action) => {
     const {
-      eventContext: { docPath },
+      eventContext: {docPath},
       modifiedFields,
     } = action;
 
@@ -61,7 +61,7 @@ export const onReplyDeleteLogic: LogicConfig = {
     };
     const {
       "@id": commentId,
-      createdBy: { "@id": commentAuthorId },
+      createdBy: {"@id": commentAuthorId},
     } = commentDoc;
 
     const notificationDocPath = `users/
