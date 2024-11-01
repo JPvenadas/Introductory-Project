@@ -9,9 +9,9 @@
 //  decrement comment repliesCount
 //  delete the notification for comment's author
 
-import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {Entity} from "../db-structure";
-import {db} from "emberflow/lib";
+import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
+import { Entity } from "../db-structure";
+import { db } from "emberflow/lib";
 
 export const onReplyDeleteLogic: LogicConfig = {
   name: "onReplyDeleteLogic",
@@ -20,9 +20,7 @@ export const onReplyDeleteLogic: LogicConfig = {
   entities: [Entity.Reply],
   logicFn: async (action) => {
     const {
-      eventContext: {
-        docPath,
-      },
+      eventContext: { docPath },
       modifiedFields,
     } = action;
 
@@ -30,57 +28,53 @@ export const onReplyDeleteLogic: LogicConfig = {
       ...modifiedFields,
     };
 
-
     const replyRef = db.doc(docPath);
     const commentDocRef = replyRef.parent.parent;
 
     if (!commentDocRef) {
       return {
-        "name": "onReplyDeleteLogic",
-        "status": "error",
-        "documents": [],
-        "message": `Invalid docPath at ${docPath}`,
+        name: "onReplyDeleteLogic",
+        status: "error",
+        documents: [],
+        message: `Invalid docPath at ${docPath}`,
       };
     }
 
-    // const commentRef = db.doc(commentDocRef.path);
     const commentDocSnapshot = await commentDocRef.get();
     const commentDoc = commentDocSnapshot.data();
 
     if (commentDoc === undefined) {
       return {
-        "name": "onReplyDeleteLogic",
-        "status": "error",
-        "documents": [],
-        "message": `Comment ${commentDocRef.id} does not exist`,
+        name: "onReplyDeleteLogic",
+        status: "error",
+        documents: [],
+        message: `Comment ${commentDocRef.id} does not exist`,
       };
     }
 
     const commentLogicResultDoc: LogicResultDoc = {
-      "action": "merge",
-      "dstPath": commentDocRef.path,
-      "instructions": {
-        "repliesCount": "--",
+      action: "merge",
+      dstPath: commentDocRef.path,
+      instructions: {
+        repliesCount: "--",
       },
     };
     const {
       "@id": commentId,
-      "createdBy": {
-        "@id": commentAuthorId,
-      },
+      createdBy: { "@id": commentAuthorId },
     } = commentDoc;
 
     const notificationDocPath = `users/
     ${commentAuthorId}/notifications/${commentId}`;
 
     const notificationLogicResultDoc: LogicResultDoc = {
-      "action": "delete",
-      "dstPath": notificationDocPath,
+      action: "delete",
+      dstPath: notificationDocPath,
     };
     const replyLogicResultDoc: LogicResultDoc = {
-      "action": "delete",
-      "dstPath": docPath,
-      "doc": replyDoc,
+      action: "delete",
+      dstPath: docPath,
+      doc: replyDoc,
     };
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(replyLogicResultDoc);
@@ -88,9 +82,9 @@ export const onReplyDeleteLogic: LogicConfig = {
     logicResultDocs.push(commentLogicResultDoc);
 
     return {
-      "name": "onReplyDeleteLogic",
-      "status": "finished",
-      "documents": logicResultDocs,
+      name: "onReplyDeleteLogic",
+      status: "finished",
+      documents: logicResultDocs,
     };
   },
 };
