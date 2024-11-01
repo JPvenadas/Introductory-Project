@@ -47,7 +47,9 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const {
       "@id": postId,
-      createdBy: {"@id": postOwnerId},
+      createdBy: {
+        "@id": postOwnerId,
+      },
     } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
@@ -82,11 +84,11 @@ export const onCommentCreateLogic: LogicConfig = {
       "createdBy": postDoc.createdBy,
     };
 
-    const commentDoc: DocumentData = {
+    const commentDoc: DocumentData= {
       ...modifiedFields,
       "@id": docId,
       "createdBy": userView,
-      "createdAt": now,
+      "createdAt": now.toDate(),
       "repliesCount": 0,
       "post": postView,
     };

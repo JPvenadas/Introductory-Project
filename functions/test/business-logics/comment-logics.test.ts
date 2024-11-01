@@ -2,13 +2,14 @@
 import {onCommentCreateLogic, onCommentUpdateLogic, onCommentDeleteLogic} from "../../src/business-logics/comment-logics";
 import {admin} from "emberflow/lib";
 import {initTestEmberflow} from "../init-test-emberflow";
-import {UserView} from "../../src/types";
+import {Comment, Post, PostView, UserView} from "../../src/types";
 import {Action, EventContext} from "emberflow/lib/types";
 import {firestore} from "firebase-admin";
 import * as utils from "../../src/business-logics/utils";
 
 initTestEmberflow();
 
+const now = expect.any(admin.firestore.Timestamp);
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
@@ -16,6 +17,158 @@ const user: UserView = {
   "firstName": "Sample",
   "lastName": "User",
 };
+
+const post: Post = {
+  "@id": "postId",
+  "commentsCount": 0,
+  "createdAt": now,
+  "createdBy": user,
+  "likesCount": 0,
+  "privacy": "public",
+  "sharesCount": 0,
+};
+
+const postView: PostView = {
+  "@id": "postId",
+  "createdAt": now,
+  "createdBy": user,
+};
+
+
+describe("onCommentCreateLogic", () => {
+  const modifiedFields = {
+    content: "Hello, World!",
+  };
+  const commentId = "commentId";
+  const docPath = `posts/postId/comments/${commentId}`;
+  const eventContext = {
+    uid: userId,
+    docPath: docPath,
+    docId: commentId,
+  } as EventContext;
+
+  const action: Action = {
+    actionType: "create",
+    eventContext: eventContext,
+    user: user,
+    document: {},
+    status: "new",
+    timeCreated: admin.firestore.Timestamp.now(),
+    modifiedFields: modifiedFields,
+  };
+
+  const expectedNotificationDoc = {
+    "@id": "commentId",
+    "createdBy": user,
+    "createdAt": expect.any(admin.firestore.Timestamp),
+    "type": "comment",
+    "read": false,
+    "post": post,
+  };
+
+  const expectedCommentDoc: Comment = {
+    "repliesCount": 0,
+    "@id": commentId,
+    "content": "Hello, World!",
+    "createdBy": user,
+    "createdAt": expect.any(admin.firestore.Timestamp),
+    "post": postView,
+  };
+
+
+  beforeEach(() => {
+    jest.spyOn(admin.firestore.Timestamp, "now").mockReturnValue({
+      toDate: () => expect.any(admin.firestore.Timestamp),
+    }as firestore.Timestamp);
+    jest.spyOn(admin.firestore(), "doc")
+      .mockImplementation(() =>{
+        // const dirs = docPath.split("/");
+
+        return {
+          parent: {
+            parent: {
+              get: jest.fn().mockResolvedValue({
+                data: jest.fn().mockReturnValue({
+                  "@id": "postId",
+                  "commentsCount": 0,
+                  "likesCount": 0,
+                  "sharesCount": 0,
+                  "privacy": "public",
+                  "createdAt": now,
+                  "createdBy": {
+                    "@id": userId,
+                    "firstName": "Sample",
+                    "lastName": "User",
+                    "avatarUrl": `users/${userId}/profile-picture.jpeg`,
+                  },
+                }),
+              }),
+            },
+          },
+        } as unknown as firestore.DocumentReference;
+      }
+      );
+
+    jest.spyOn(utils, "createUserView")
+      .mockImplementation((user) => {
+        return {
+          "@id": user["@id"],
+          "firstName": user.firstName,
+          "lastName": user.lastName,
+          "avatarUrl": user.avatarUrl,
+        } as UserView;
+      });
+  });
+
+  afterEach(()=> {
+    jest.restoreAllMocks();
+  });
+
+
+  it("should return finished logic result with 3 docs", async () => {
+    const result = await onCommentCreateLogic.logicFn(action);
+    console.log(result);
+
+
+    expect(result.name).toEqual("onCommentCreateLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(3);
+  });
+
+  it("should return finished logic result to create comment document",
+    async () => {
+      const result = await onCommentCreateLogic.logicFn(action);
+
+      expect(result.documents[0]).toStrictEqual({
+        action: "create",
+        dstPath: docPath,
+        doc: expectedCommentDoc,
+      });
+    });
+
+  it("should return finished logic result to create notification document",
+    async () => {
+      const result = await onCommentCreateLogic.logicFn(action);
+
+      expect(result.documents[1]).toStrictEqual({
+        action: "create",
+        dstPath: `users/${userId}/notifications/${commentId}`,
+        doc: expectedNotificationDoc,
+      });
+    });
+  it("should return finished logic result to update post document comment count",
+    async () => {
+      const result = await onCommentCreateLogic.logicFn(action);
+
+      expect(result.documents[2]).toStrictEqual({
+        action: "merge",
+        dstPath: `posts/${post["@id"]}`,
+        instructions: {
+          commentsCount: "++",
+        },
+      });
+    });
+});
 
 describe("onCommentUpdateLogic", () => {
   const postId = "postId";
