@@ -1,20 +1,20 @@
-import {Action, EventContext} from "emberflow/lib/types";
-import {initTestEmberflow} from "../init-test-emberflow";
-import {UserView} from "../../src/types";
-import {admin} from "emberflow/lib";
-import {
-  onCommentUpdateLogic,
-  onCommentDeleteLogic,
-} from "../../src/business-logics/comment-logics";
+// import {firestore} from "firebase-admin";
+import { onCommentCreateLogic } from "../../src/business-logics/comment-logics";
+import { admin } from "emberflow/lib";
+import { initTestEmberflow } from "../init-test-emberflow";
+import { UserView } from "../../src/types";
+import { Action, EventContext } from "emberflow/lib/types";
+import { firestore } from "firebase-admin";
+import * as utils from "../../src/business-logics/utils";
 
 initTestEmberflow();
 
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
-  "avatarUrl": `users/${userId}/profile-picture.jpeg`,
-  "firstName": "Sample",
-  "lastName": "User",
+  avatarUrl: `users/${userId}/profile-picture.jpeg`,
+  firstName: "Sample",
+  lastName: "User",
 };
 
 describe("onCommentUpdateLogic", () => {
@@ -48,15 +48,14 @@ describe("onCommentUpdateLogic", () => {
     expect(result.documents.length).toBe(1);
   });
 
-  it("should return finished logic result to update comment document",
-    async () => {
-      const result = await onCommentUpdateLogic.logicFn(action);
-      expect(result.documents[0]).toStrictEqual({
-        action: "merge",
-        dstPath: docPath,
-        doc: modifiedFields,
-      });
+  it("should return finished logic result to update comment document", async () => {
+    const result = await onCommentUpdateLogic.logicFn(action);
+    expect(result.documents[0]).toStrictEqual({
+      action: "merge",
+      dstPath: docPath,
+      doc: modifiedFields,
     });
+  });
 });
 
 describe("onCommentDeleteLogic", () => {
@@ -71,7 +70,7 @@ describe("onCommentDeleteLogic", () => {
   const document = {
     post: {
       "@id": postId,
-      "createdBy": {
+      createdBy: {
         "@id": postAuthorId,
       },
     },
@@ -94,37 +93,34 @@ describe("onCommentDeleteLogic", () => {
     expect(result.documents.length).toBe(3);
   });
 
-  it("should return finished logic result to delete comment document",
-    async () => {
-      const result = await onCommentDeleteLogic.logicFn(action);
-      expect(result.documents[0]).toStrictEqual({
-        action: "delete",
-        dstPath: docPath,
-      });
+  it("should return finished logic result to delete comment document", async () => {
+    const result = await onCommentDeleteLogic.logicFn(action);
+    expect(result.documents[0]).toStrictEqual({
+      action: "delete",
+      dstPath: docPath,
     });
+  });
 
-  it("should return finished logic result to decrement comment count document",
-    async () => {
-      const postDocPath = `posts/${postId}`;
-      const result = await onCommentDeleteLogic.logicFn(action);
+  it("should return finished logic result to decrement comment count document", async () => {
+    const postDocPath = `posts/${postId}`;
+    const result = await onCommentDeleteLogic.logicFn(action);
 
-      expect(result.documents[1]).toStrictEqual({
-        action: "merge",
-        dstPath: postDocPath,
-        instructions: {
-          commentsCount: "--",
-        },
-      });
+    expect(result.documents[1]).toStrictEqual({
+      action: "merge",
+      dstPath: postDocPath,
+      instructions: {
+        commentsCount: "--",
+      },
     });
+  });
 
-  it("should return finished logic result to delete notification document",
-    async () => {
-      const notifDocPath = `users/${postAuthorId}/notifications/${commentId}`;
-      const result = await onCommentDeleteLogic.logicFn(action);
+  it("should return finished logic result to delete notification document", async () => {
+    const notifDocPath = `users/${postAuthorId}/notifications/${commentId}`;
+    const result = await onCommentDeleteLogic.logicFn(action);
 
-      expect(result.documents[2]).toStrictEqual({
-        action: "delete",
-        dstPath: notifDocPath,
-      });
+    expect(result.documents[2]).toStrictEqual({
+      action: "delete",
+      dstPath: notifDocPath,
     });
+  });
 });
