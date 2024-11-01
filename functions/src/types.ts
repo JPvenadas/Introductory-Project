@@ -64,7 +64,7 @@ export interface Comment extends BaseEntity {
   content: string;
   repliesCount: number;
   replies?: Reply[];
-  post: PostView
+  post: PostView;
 }
 
 export interface Reply extends BaseEntity {
