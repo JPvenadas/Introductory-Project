@@ -1,10 +1,10 @@
 // import {firestore} from "firebase-admin";
-import { onCommentCreateLogic } from "../../src/business-logics/comment-logics";
-import { admin } from "emberflow/lib";
-import { initTestEmberflow } from "../init-test-emberflow";
-import { UserView } from "../../src/types";
-import { Action, EventContext } from "emberflow/lib/types";
-import { firestore } from "firebase-admin";
+import {onCommentCreateLogic, onCommentUpdateLogic, onCommentDeleteLogic} from "../../src/business-logics/comment-logics";
+import {admin} from "emberflow/lib";
+import {initTestEmberflow} from "../init-test-emberflow";
+import {UserView} from "../../src/types";
+import {Action, EventContext} from "emberflow/lib/types";
+import {firestore} from "firebase-admin";
 import * as utils from "../../src/business-logics/utils";
 
 initTestEmberflow();
@@ -12,9 +12,9 @@ initTestEmberflow();
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
-  avatarUrl: `users/${userId}/profile-picture.jpeg`,
-  firstName: "Sample",
-  lastName: "User",
+  "avatarUrl": `users/${userId}/profile-picture.jpeg`,
+  "firstName": "Sample",
+  "lastName": "User",
 };
 
 describe("onCommentUpdateLogic", () => {
@@ -70,7 +70,7 @@ describe("onCommentDeleteLogic", () => {
   const document = {
     post: {
       "@id": postId,
-      createdBy: {
+      "createdBy": {
         "@id": postAuthorId,
       },
     },
