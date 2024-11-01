@@ -1,16 +1,10 @@
-import { Entity } from "../db-structure";
-import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
-import { DocumentData } from "firebase-admin/firestore";
-
-// TODO write onCommentCreateLogic
-import { LogicConfig, LogicResultDoc } from "emberflow/lib/types";
-import { Entity } from "../db-structure";
-import { firestore } from "firebase-admin";
-import DocumentData = firestore.DocumentData;
-import { Notification, Post, PostView, UserView } from "../types";
-import { admin, db } from "emberflow/lib";
-// eslint-disable-next-line import/namespace
-import { createUserView } from "./utils";
+import {Entity} from "../db-structure";
+import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
+import {DocumentData} from "firebase-admin/firestore";
+import {firestore} from "firebase-admin";
+import {Notification, Post, PostView, UserView} from "../types";
+import {admin, db} from "emberflow/lib";
+import {createUserView} from "./utils";
 
 export const onCommentCreateLogic: LogicConfig = {
   //  increment post commentsCount
@@ -21,7 +15,7 @@ export const onCommentCreateLogic: LogicConfig = {
   entities: [Entity.Comment],
   logicFn: async (action) => {
     const {
-      eventContext: { docId, docPath },
+      eventContext: {docId, docPath},
       user,
       modifiedFields,
     } = action;
@@ -53,7 +47,7 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const {
       "@id": postId,
-      createdBy: { "@id": postOwnerId },
+      createdBy: {"@id": postOwnerId},
     } = postDoc;
 
     const postLogicResultDoc: LogicResultDoc = {
@@ -69,11 +63,11 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const notificationDoc: Notification = {
       "@id": docId,
-      createdBy: userView,
-      createdAt: now.toDate(),
-      type: "comment",
-      read: false,
-      post: postDoc as Post,
+      "createdBy": userView,
+      "createdAt": now.toDate(),
+      "type": "comment",
+      "read": false,
+      "post": postDoc as Post,
     };
 
     const notificationLogicResultDoc: LogicResultDoc = {
@@ -84,17 +78,17 @@ export const onCommentCreateLogic: LogicConfig = {
 
     const postView: PostView = {
       "@id": postId,
-      createdAt: postDoc.createdAt,
-      createdBy: postDoc.createdBy,
+      "createdAt": postDoc.createdAt,
+      "createdBy": postDoc.createdBy,
     };
 
     const commentDoc: DocumentData = {
       ...modifiedFields,
       "@id": docId,
-      createdBy: userView,
-      createdAt: now,
-      repliesCount: 0,
-      post: postView,
+      "createdBy": userView,
+      "createdAt": now,
+      "repliesCount": 0,
+      "post": postView,
     };
 
     const commentLogicResultDoc: LogicResultDoc = {
@@ -125,8 +119,8 @@ export const onCommentUpdateLogic: LogicConfig = {
   entities: [Entity.Comment],
   logicFn: async (action) => {
     const {
-      eventContext: { docPath },
-      modifiedFields: { content },
+      eventContext: {docPath},
+      modifiedFields: {content},
     } = action;
 
     const commentDoc: DocumentData = {
@@ -157,13 +151,13 @@ export const onCommentDeleteLogic: LogicConfig = {
   entities: [Entity.Comment],
   logicFn: async (action) => {
     const {
-      eventContext: { docId, docPath },
-      document: { post },
+      eventContext: {docId, docPath},
+      document: {post},
     } = action;
 
     const {
       "@id": postId,
-      createdBy: { "@id": postAuthorId },
+      createdBy: {"@id": postAuthorId},
     } = post;
 
     const postDocPath = `posts/${postId}`;
