@@ -217,6 +217,7 @@ describe("onCommentCreateLogic", () => {
     expect(result.name).toBe("onCommentCreateLogic");
     expect(result.status).toBe("error");
     expect(result.documents.length).toBe(0);
+    expect(result.message).toBe("post undefined does not exist");
   });
 });
 
