@@ -1,11 +1,12 @@
 // import {firestore} from "firebase-admin";
 import {onCommentCreateLogic, onCommentUpdateLogic, onCommentDeleteLogic} from "../../src/business-logics/comment-logics";
-import {admin} from "emberflow/lib";
+import {admin, db} from "emberflow/lib";
 import {initTestEmberflow} from "../init-test-emberflow";
 import {Comment, Post, PostView, UserView} from "../../src/types";
 import {Action, EventContext} from "emberflow/lib/types";
 import {firestore} from "firebase-admin";
 import * as utils from "../../src/business-logics/utils";
+import {DocumentData} from "firebase-admin/firestore";
 
 initTestEmberflow();
 
@@ -41,6 +42,8 @@ describe("onCommentCreateLogic", () => {
   };
   const commentId = "commentId";
   const docPath = `posts/postId/comments/${commentId}`;
+  const invalidDocPath = "invalid/docPath";
+  const nonExistentPostId = "nonExistentPostId";
   const eventContext = {
     uid: userId,
     docPath: docPath,
@@ -80,10 +83,31 @@ describe("onCommentCreateLogic", () => {
     jest.spyOn(admin.firestore.Timestamp, "now").mockReturnValue({
       toDate: () => expect.any(admin.firestore.Timestamp),
     }as firestore.Timestamp);
-    jest.spyOn(admin.firestore(), "doc")
-      .mockImplementation(() =>{
-        // const dirs = docPath.split("/");
+    jest.spyOn(db, "doc")
+      .mockImplementation((docPath) =>{
+        const paths = docPath.split("/");
+        const postDocIdIndex = 1;
+        const postDocId = paths[postDocIdIndex];
 
+        if (docPath === invalidDocPath) {
+          return {
+            parent: {
+              parent: null,
+            },
+          } as unknown as firestore.DocumentReference<DocumentData>;
+        }
+
+        if (postDocId === nonExistentPostId) {
+          return {
+            parent: {
+              parent: {
+                get: jest.fn().mockResolvedValue({
+                  data: () => undefined,
+                }),
+              },
+            },
+          } as unknown as firestore.DocumentReference<DocumentData>;
+        }
         return {
           parent: {
             parent: {
@@ -168,6 +192,32 @@ describe("onCommentCreateLogic", () => {
         },
       });
     });
+  it("should run the error path when docPath is invalid", async () =>{
+    const result = await onCommentCreateLogic.logicFn({
+      ...action,
+      eventContext: {
+        ...eventContext,
+        docPath: invalidDocPath,
+      },
+    });
+    expect(result.name).toBe("onCommentCreateLogic");
+    expect(result.status).toBe("error");
+    expect(result.documents.length).toBe(0);
+    expect(result.message).toBe(`Invalid docPath at ${invalidDocPath}`);
+  });
+
+  it("should run the error path when post does not exist", async () => {
+    const result = await onCommentCreateLogic.logicFn({
+      ...action,
+      eventContext: {
+        ...eventContext,
+        docPath: `posts/${nonExistentPostId}/comments/${commentId}`,
+      },
+    });
+    expect(result.name).toBe("onCommentCreateLogic");
+    expect(result.status).toBe("error");
+    expect(result.documents.length).toBe(0);
+  });
 });
 
 describe("onCommentUpdateLogic", () => {
