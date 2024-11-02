@@ -3,9 +3,7 @@ import {PostView, UserView} from "../../src/types";
 import {initTestEmberflow} from "../init-test-emberflow";
 import {Action, EventContext, LogicResultDoc} from "emberflow/lib/types";
 import {DocumentData, DocumentReference} from "firebase-admin/firestore";
-import {
-  onUnlikeLogic,
-} from "../../src/business-logics/like-logics";
+import {onUnlikeLogic} from "../../src/business-logics/like-logics";
 
 initTestEmberflow();
 
