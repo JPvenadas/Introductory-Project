@@ -4,6 +4,7 @@ import {createUserView} from "./utils";
 import {admin, db} from "emberflow/lib";
 import {DocumentData} from "firebase-admin/firestore";
 import {firestore} from "firebase-admin";
+import {Entity} from "../db-structure";
 
 export const onReplyCreateLogic: LogicConfig = {
   name: "onReplyCreateLogic",
@@ -108,10 +109,6 @@ export const onReplyCreateLogic: LogicConfig = {
 // TODO write onReplyUpdateLogic
 //  allow user to update reply content
 
-import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {Entity} from "../db-structure";
-import {firestore} from "firebase-admin";
-import DocumentData = firestore.DocumentData;
 
 export const onReplyUpdateLogic: LogicConfig = {
   name: "onReplyUpdateLogic",
