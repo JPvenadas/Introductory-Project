@@ -1,4 +1,11 @@
 import {Action, EventContext} from "emberflow/lib/types";
+import {Comment, PostView, UserView} from "../../src/types";
+import {initTestEmberflow} from "../init-test-emberflow";
+import {admin, db} from "emberflow/lib";
+import {
+  onReplyDeleteLogic,
+} from "../../src/business-logics/reply-logics";
+import {DocumentData, DocumentReference} from "firebase-admin/firestore";
 import {UserView, Comment, PostView} from "../../src/types";
 import {initTestEmberflow} from "../init-test-emberflow";
 import {admin, db} from "emberflow/lib";
@@ -33,6 +40,11 @@ const comment: Comment = {
   "post": post,
 };
 
+
+describe("onReplyDeleteLogic", () => {
+  const replyId = "replyId";
+  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
+  const eventContext: EventContext = {
 describe("onReplyCreateLogic", () => {
   const replyId = "replyId";
   const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
