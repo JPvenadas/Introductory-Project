@@ -1,40 +1,36 @@
-import { Action, EventContext } from "emberflow/lib/types";
-import { UserView } from "../../src/types";
-import { initTestEmberflow } from "../init-test-emberflow";
-import { admin } from "emberflow/lib";
-import { onReplyUpdateLogic } from "../../src/business-logics/reply-logics";
-import { Comment, PostView, UserView } from "../../src/types";
-import { initTestEmberflow } from "../init-test-emberflow";
-import { admin, db } from "emberflow/lib";
-import { onReplyCreateLogic } from "../../src/business-logics/reply-logics";
-import { DocumentData, DocumentReference } from "firebase-admin/firestore";
-import { firestore } from "firebase-admin";
+import {Action, EventContext} from "emberflow/lib/types";
+import {UserView, Comment, PostView} from "../../src/types";
+import {initTestEmberflow} from "../init-test-emberflow";
+import {admin, db} from "emberflow/lib";
+import {onReplyUpdateLogic, onReplyCreateLogic} from "../../src/business-logics/reply-logics";
+import {DocumentData, DocumentReference} from "firebase-admin/firestore";
+import {firestore} from "firebase-admin";
 
 initTestEmberflow();
 
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
-  avatarUrl: `users/${userId}/profile-picture.jpeg`,
-  firstName: "Sample",
-  lastName: "User",
+  "avatarUrl": `users/${userId}/profile-picture.jpeg`,
+  "firstName": "Sample",
+  "lastName": "User",
 };
 
 const postId = "postId";
 const post: PostView = {
   "@id": postId,
-  createdBy: user,
-  createdAt: admin.firestore.Timestamp.now().toDate(),
+  "createdBy": user,
+  "createdAt": admin.firestore.Timestamp.now().toDate(),
 };
 
 const commentId = "commentId";
 const comment: Comment = {
   "@id": commentId,
-  content: "Hello, World!",
-  createdBy: user,
-  createdAt: admin.firestore.Timestamp.now().toDate(),
-  repliesCount: 0,
-  post: post,
+  "content": "Hello, World!",
+  "createdBy": user,
+  "createdAt": admin.firestore.Timestamp.now().toDate(),
+  "repliesCount": 0,
+  "post": post,
 };
 
 describe("onReplyCreateLogic", () => {
@@ -59,9 +55,9 @@ describe("onReplyCreateLogic", () => {
   };
   const expectedReplyDoc = {
     "@id": replyId,
-    content: "Hello, World!",
-    createdBy: user,
-    createdAt: expect.any(admin.firestore.Timestamp),
+    "content": "Hello, World!",
+    "createdBy": user,
+    "createdAt": expect.any(admin.firestore.Timestamp),
   };
 
   beforeEach(() => {
@@ -83,7 +79,7 @@ describe("onReplyCreateLogic", () => {
 
       if (commentDocPathId === "nonExistentCommentId") {
         return {
-          get: jest.fn().mockResolvedValue({ data: () => null }),
+          get: jest.fn().mockResolvedValue({data: () => null}),
           parent: {
             parent: {
               path: `posts/${postId}/comments/${commentDocPathId}`,
@@ -183,12 +179,60 @@ describe("onReplyCreateLogic", () => {
       dstPath: notifDocPath,
       doc: {
         "@id": replyId,
-        createdBy: user,
-        createdAt: expect.any(admin.firestore.Timestamp),
-        read: false,
-        type: "reply",
-        post: post,
+        "createdBy": user,
+        "createdAt": expect.any(admin.firestore.Timestamp),
+        "read": false,
+        "type": "reply",
+        "post": post,
       },
     });
   });
+});
+
+
+describe("onReplyUpdateLogic", () => {
+  const replyId = "replyId";
+  const modifiedFields = {
+    content: "Hello, World!",
+  };
+
+  const document= {
+    content: "Hi, World!",
+  };
+  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
+  const eventContext = {
+    uid: userId,
+    docPath: docPath,
+    docId: replyId,
+  } as EventContext;
+
+  const action: Action = {
+    actionType: "create",
+    eventContext: eventContext,
+    modifiedFields: modifiedFields,
+    document: document,
+    user: user,
+    status: "new",
+    timeCreated: admin.firestore.Timestamp.now(),
+  };
+
+  it("should return finished logic result with 1 document", async () => {
+    const result = await onReplyUpdateLogic.logicFn(action);
+
+    expect(result.name).toEqual("onReplyUpdateLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(1);
+  });
+
+  it("should return finished logic result with updated reply content",
+    async () => {
+      const result = await onReplyUpdateLogic.logicFn(action);
+      expect(result.documents[0]).toStrictEqual({
+        action: "merge",
+        dstPath: docPath,
+        doc: {
+          content: modifiedFields.content,
+        },
+      });
+    });
 });
