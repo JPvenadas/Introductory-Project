@@ -22,6 +22,7 @@ const post: PostView = {
 
 describe("onShareLogic", () => {
   const shareId = "shareId";
+  const postPath = `posts/${post["@id"]}`;
   const docPath = `posts/${post["@id"]}/shares/${userView["@id"]}`;
   const eventContext: EventContext = {
     docId: shareId,
@@ -45,6 +46,7 @@ describe("onShareLogic", () => {
       return {
         parent: {
           parent: {
+            path: postPath,
             get: jest.fn().mockResolvedValue({
               data: jest.fn().mockReturnValue(post),
             }),
@@ -67,7 +69,7 @@ describe("onShareLogic", () => {
     expect(result.documents[0].action).toEqual("copy");
     expect(result.documents[0].dstPath)
       .toEqual(`users/${userView["@id"]}/timeline/${post["@id"]}`);
-    expect(result.documents[0].srcPath).toEqual(docPath);
+    expect(result.documents[0].srcPath).toEqual(postPath);
   });
 
   it("should return 1 document with action create", async () => {
