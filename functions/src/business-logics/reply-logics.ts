@@ -149,9 +149,6 @@ export const onReplyUpdateLogic: LogicConfig = {
 //  decrement comment repliesCount
 //  delete the notification for comment's author
 
-import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {Entity} from "../db-structure";
-import {db} from "emberflow/lib";
 
 export const onReplyDeleteLogic: LogicConfig = {
   name: "onReplyDeleteLogic",

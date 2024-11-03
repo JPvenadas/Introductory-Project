@@ -3,13 +3,10 @@ import {Comment, PostView, UserView} from "../../src/types";
 import {initTestEmberflow} from "../init-test-emberflow";
 import {admin, db} from "emberflow/lib";
 import {
+  onReplyCreateLogic,
+  onReplyUpdateLogic,
   onReplyDeleteLogic,
 } from "../../src/business-logics/reply-logics";
-import {DocumentData, DocumentReference} from "firebase-admin/firestore";
-import {UserView, Comment, PostView} from "../../src/types";
-import {initTestEmberflow} from "../init-test-emberflow";
-import {admin, db} from "emberflow/lib";
-import {onReplyUpdateLogic, onReplyCreateLogic} from "../../src/business-logics/reply-logics";
 import {DocumentData, DocumentReference} from "firebase-admin/firestore";
 import {firestore} from "firebase-admin";
 
@@ -41,10 +38,6 @@ const comment: Comment = {
 };
 
 
-describe("onReplyDeleteLogic", () => {
-  const replyId = "replyId";
-  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
-  const eventContext: EventContext = {
 describe("onReplyCreateLogic", () => {
   const replyId = "replyId";
   const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
@@ -247,4 +240,110 @@ describe("onReplyUpdateLogic", () => {
         },
       });
     });
+});
+
+
+describe("onReplyDeleteLogic", () => {
+  const replyId = "replyId";
+  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
+  const eventContext: EventContext = {
+    uid: userId,
+    docPath: docPath,
+    docId: replyId,
+  } as EventContext;
+
+  const action: Action = {
+    actionType: "create",
+    eventContext: eventContext,
+    user: user,
+    document: {
+      content: "Hello World",
+    },
+    status: "new",
+    timeCreated: admin.firestore.Timestamp.now(),
+    modifiedFields: {},
+  };
+  beforeEach(() => {
+    jest.spyOn(db, "doc").mockImplementation((docPath: string) => {
+      const path = docPath.split("/");
+      const commentIdPathIndex = 3;
+      const commentDocPathId = path[commentIdPathIndex];
+
+      if (docPath === "invalid/docPath") {
+        return {
+          parent: {
+            parent: null,
+          },
+        } as unknown as DocumentReference<DocumentData>;
+      }
+
+      if (commentDocPathId === "nonExistentCommentId") {
+        return {
+          parent: {
+            parent: {
+              path: `posts/${postId}/comments/${commentId}`,
+              get: jest.fn().mockResolvedValue({data: () => null}),
+            },
+          },
+        } as unknown as DocumentReference<DocumentData>;
+      }
+
+      return {
+
+        parent: {
+          parent: {
+            path: `posts/${postId}/comments/${commentDocPathId}`,
+            get: jest.fn().mockResolvedValue({
+              data: () => comment,
+            }),
+          },
+        },
+      } as unknown as DocumentReference<DocumentData>;
+    });
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+
+  it("should return finished logic result with 3 documents", async () => {
+    const result = await onReplyDeleteLogic.logicFn(action);
+
+    expect(result.name).toEqual("onReplyDeleteLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(3);
+  });
+
+
+  it("should return finished logic result to delete reply document",
+    async () => {
+      const result = await onReplyDeleteLogic.logicFn(action);
+
+      expect(result.documents[0]).toStrictEqual({
+        action: "delete",
+        dstPath: docPath,
+      });
+    });
+  it("should return finished logic result to delete notification document",
+    async () => {
+      const result = await onReplyDeleteLogic.logicFn(action);
+
+      expect(result.documents[1]).toStrictEqual({
+        action: "delete",
+        dstPath: `users/\n    ${userId}/notifications/${commentId}`,
+      });
+    });
+  it("should return finished logic result to decrement comment count " +
+    "in comment document",
+  async () => {
+    const result = await onReplyDeleteLogic.logicFn(action);
+
+    expect(result.documents[2]).toStrictEqual({
+      action: "merge",
+      dstPath: `posts/${postId}/comments/${commentId}`,
+      instructions: {
+        repliesCount: "--",
+      },
+    });
+  });
 });
