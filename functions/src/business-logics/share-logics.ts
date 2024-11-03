@@ -51,7 +51,7 @@ export const onShareLogic: LogicConfig = {
     const timelineLogicResultDoc: LogicResultDoc = {
       action: "copy",
       dstPath: `users/${user["@id"]}/timeline/${postId}`,
-      srcPath: docPath,
+      srcPath: postDocRef.path,
     };
     const postLogicResultDoc: LogicResultDoc = {
       action: "create",
