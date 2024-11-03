@@ -113,7 +113,6 @@ describe("onReplyDeleteLogic", () => {
 
       expect(result.documents[0]).toStrictEqual({
         action: "delete",
-        doc: {},
         dstPath: docPath,
       });
     });
