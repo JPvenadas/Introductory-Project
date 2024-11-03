@@ -21,12 +21,8 @@ export const onReplyDeleteLogic: LogicConfig = {
   logicFn: async (action) => {
     const {
       eventContext: {docPath},
-      modifiedFields,
     } = action;
 
-    const replyDoc = {
-      ...modifiedFields,
-    };
 
     const replyRef = db.doc(docPath);
     const commentDocRef = replyRef.parent.parent;
@@ -74,7 +70,6 @@ export const onReplyDeleteLogic: LogicConfig = {
     const replyLogicResultDoc: LogicResultDoc = {
       action: "delete",
       dstPath: docPath,
-      doc: replyDoc,
     };
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(replyLogicResultDoc);
