@@ -4,6 +4,8 @@ import {initTestEmberflow} from "../init-test-emberflow";
 import {admin, db} from "emberflow/lib";
 import {
   onReplyCreateLogic,
+  onReplyUpdateLogic,
+  onReplyDeleteLogic,
 } from "../../src/business-logics/reply-logics";
 import {DocumentData, DocumentReference} from "firebase-admin/firestore";
 import {firestore} from "firebase-admin";
@@ -34,6 +36,7 @@ const comment: Comment = {
   "repliesCount": 0,
   "post": post,
 };
+
 
 describe("onReplyCreateLogic", () => {
   const replyId = "replyId";
@@ -108,41 +111,39 @@ describe("onReplyCreateLogic", () => {
     jest.clearAllMocks();
   });
 
-  it("should return error error logic result if comment docpath is invalid",
-    async () => {
-      const invalidDocPath = "invalid/docpath";
-      const result = await onReplyCreateLogic.logicFn({
-        ...action,
-        eventContext: {
-          ...eventContext,
-          docPath: invalidDocPath,
-        },
-      });
-
-      expect(result.name).toEqual("onReplyCreateLogic");
-      expect(result.status).toEqual("error");
-      expect(result.documents.length).toBe(0);
-      expect(result.message).toContain("Invalid comment docpath");
+  it("should return error error logic result if comment docpath is invalid", async () => {
+    const invalidDocPath = "invalid/docpath";
+    const result = await onReplyCreateLogic.logicFn({
+      ...action,
+      eventContext: {
+        ...eventContext,
+        docPath: invalidDocPath,
+      },
     });
 
-  it("should return error logic result if comment does not exist",
-    async () => {
-      const commentId = "nonExistentCommentId";
-      const modifiedAction = {
-        ...action,
-        eventContext: {
-          ...eventContext,
-          docPath: `posts/${postId}/comments/${commentId}/replies/${replyId}`,
-        },
-      };
+    expect(result.name).toEqual("onReplyCreateLogic");
+    expect(result.status).toEqual("error");
+    expect(result.documents.length).toBe(0);
+    expect(result.message).toContain("Invalid comment docpath");
+  });
 
-      const result = await onReplyCreateLogic.logicFn(modifiedAction);
+  it("should return error logic result if comment does not exist", async () => {
+    const commentId = "nonExistentCommentId";
+    const modifiedAction = {
+      ...action,
+      eventContext: {
+        ...eventContext,
+        docPath: `posts/${postId}/comments/${commentId}/replies/${replyId}`,
+      },
+    };
 
-      expect(result.name).toEqual("onReplyCreateLogic");
-      expect(result.status).toEqual("error");
-      expect(result.documents.length).toBe(0);
-      expect(result.message).toContain("does not exist");
-    });
+    const result = await onReplyCreateLogic.logicFn(modifiedAction);
+
+    expect(result.name).toEqual("onReplyCreateLogic");
+    expect(result.status).toEqual("error");
+    expect(result.documents.length).toBe(0);
+    expect(result.message).toContain("does not exist");
+  });
 
   it("should return finished logic result with 3 documents", async () => {
     const result = await onReplyCreateLogic.logicFn(action);
@@ -152,47 +153,197 @@ describe("onReplyCreateLogic", () => {
     expect(result.documents.length).toBe(3);
   });
 
-  it("should return finished logic result to create reply document",
-    async () => {
-      const result = await onReplyCreateLogic.logicFn(action);
+  it("should return finished logic result to create reply document", async () => {
+    const result = await onReplyCreateLogic.logicFn(action);
 
+    expect(result.documents[0]).toStrictEqual({
+      action: "create",
+      dstPath: docPath,
+      doc: expectedReplyDoc,
+    });
+  });
+
+  it("should return finished logic result to increment comment count document", async () => {
+    const result = await onReplyCreateLogic.logicFn(action);
+
+    expect(result.documents[1]).toStrictEqual({
+      action: "merge",
+      dstPath: `posts/${postId}/comments/${commentId}`,
+      instructions: {
+        repliesCount: "++",
+      },
+    });
+  });
+
+  it("should return finished logic result to create notification document", async () => {
+    const result = await onReplyCreateLogic.logicFn(action);
+    const notifDocPath = `users/${userId}/notifications/${replyId}`;
+
+    expect(result.documents[2]).toStrictEqual({
+      action: "create",
+      dstPath: notifDocPath,
+      doc: {
+        "@id": replyId,
+        "createdBy": user,
+        "createdAt": expect.any(admin.firestore.Timestamp),
+        "read": false,
+        "type": "reply",
+        "post": post,
+      },
+    });
+  });
+});
+
+
+describe("onReplyUpdateLogic", () => {
+  const replyId = "replyId";
+  const modifiedFields = {
+    content: "Hello, World!",
+  };
+
+  const document= {
+    content: "Hi, World!",
+  };
+  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
+  const eventContext = {
+    uid: userId,
+    docPath: docPath,
+    docId: replyId,
+  } as EventContext;
+
+  const action: Action = {
+    actionType: "create",
+    eventContext: eventContext,
+    modifiedFields: modifiedFields,
+    document: document,
+    user: user,
+    status: "new",
+    timeCreated: admin.firestore.Timestamp.now(),
+  };
+
+  it("should return finished logic result with 1 document", async () => {
+    const result = await onReplyUpdateLogic.logicFn(action);
+
+    expect(result.name).toEqual("onReplyUpdateLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(1);
+  });
+
+  it("should return finished logic result with updated reply content",
+    async () => {
+      const result = await onReplyUpdateLogic.logicFn(action);
       expect(result.documents[0]).toStrictEqual({
-        action: "create",
-        dstPath: docPath,
-        doc: expectedReplyDoc,
-      });
-    });
-
-  it("should return finished logic result to increment comment count document",
-    async () => {
-      const result = await onReplyCreateLogic.logicFn(action);
-
-      expect(result.documents[1]).toStrictEqual({
         action: "merge",
-        dstPath: `posts/${postId}/comments/${commentId}`,
-        instructions: {
-          repliesCount: "++",
-        },
-      });
-    });
-
-  it("should return finished logic result to create notification document",
-    async () => {
-      const result = await onReplyCreateLogic.logicFn(action);
-      const notifDocPath = `users/${userId}/notifications/${replyId}`;
-
-      expect(result.documents[2]).toStrictEqual({
-        action: "create",
-        dstPath: notifDocPath,
+        dstPath: docPath,
         doc: {
-          "@id": replyId,
-          "createdBy": user,
-          "createdAt": expect.any(admin.firestore.Timestamp),
-          "read": false,
-          "type": "reply",
-          "post": post,
+          content: modifiedFields.content,
         },
       });
     });
 });
 
+
+describe("onReplyDeleteLogic", () => {
+  const replyId = "replyId";
+  const docPath = `posts/${postId}/comments/${commentId}/replies/${replyId}`;
+  const eventContext: EventContext = {
+    uid: userId,
+    docPath: docPath,
+    docId: replyId,
+  } as EventContext;
+
+  const action: Action = {
+    actionType: "create",
+    eventContext: eventContext,
+    user: user,
+    document: {
+      content: "Hello World",
+    },
+    status: "new",
+    timeCreated: admin.firestore.Timestamp.now(),
+    modifiedFields: {},
+  };
+  beforeEach(() => {
+    jest.spyOn(db, "doc").mockImplementation((docPath: string) => {
+      const path = docPath.split("/");
+      const commentIdPathIndex = 3;
+      const commentDocPathId = path[commentIdPathIndex];
+
+      if (docPath === "invalid/docPath") {
+        return {
+          parent: {
+            parent: null,
+          },
+        } as unknown as DocumentReference<DocumentData>;
+      }
+
+      if (commentDocPathId === "nonExistentCommentId") {
+        return {
+          parent: {
+            parent: {
+              path: `posts/${postId}/comments/${commentId}`,
+              get: jest.fn().mockResolvedValue({data: () => null}),
+            },
+          },
+        } as unknown as DocumentReference<DocumentData>;
+      }
+
+      return {
+
+        parent: {
+          parent: {
+            path: `posts/${postId}/comments/${commentDocPathId}`,
+            get: jest.fn().mockResolvedValue({
+              data: () => comment,
+            }),
+          },
+        },
+      } as unknown as DocumentReference<DocumentData>;
+    });
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+
+  it("should return finished logic result with 3 documents", async () => {
+    const result = await onReplyDeleteLogic.logicFn(action);
+
+    expect(result.name).toEqual("onReplyDeleteLogic");
+    expect(result.status).toEqual("finished");
+    expect(result.documents.length).toBe(3);
+  });
+
+
+  it("should return finished logic result to delete reply document",
+    async () => {
+      const result = await onReplyDeleteLogic.logicFn(action);
+
+      expect(result.documents[0]).toStrictEqual({
+        action: "delete",
+        dstPath: docPath,
+      });
+    });
+  it("should return finished logic result to delete notification document",
+    async () => {
+      const result = await onReplyDeleteLogic.logicFn(action);
+
+      expect(result.documents[1]).toStrictEqual({
+        action: "delete",
+        dstPath: `users/\n    ${userId}/notifications/${commentId}`,
+      });
+    });
+  it("should return finished logic result to decrement comment count " +
+    "in comment document",
+  async () => {
+    const result = await onReplyDeleteLogic.logicFn(action);
+
+    expect(result.documents[2]).toStrictEqual({
+      action: "merge",
+      dstPath: `posts/${postId}/comments/${commentId}`,
+      instructions: {
+        repliesCount: "--",
+      },
+    });
+  });
+});
