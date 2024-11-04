@@ -42,9 +42,7 @@ describe("onLikeLogic", () => {
     status: "new",
     timeCreated: admin.firestore.Timestamp.now(),
   };
-  const expectedLikeDoc = {
-    "user": user,
-  };
+  const expectedLikeDoc = {...user};
 
   beforeEach(() => {
     jest.spyOn(admin.firestore.Timestamp, "now").mockReturnValue({

@@ -57,15 +57,11 @@ export const onLikeLogic: LogicConfig = {
     const userView = createUserView(user);
     const now = admin.firestore.Timestamp.now();
 
-    const likeDoc = {
-      user: userView,
-    };
-
     const likeDocPath = `posts/${postId}/likes/${docId}`;
     const likeLogicResultDoc: LogicResultDoc = {
       action: "create",
       dstPath: likeDocPath,
-      doc: likeDoc,
+      doc: {...userView},
     };
 
     const notificationDoc = {
@@ -75,10 +71,10 @@ export const onLikeLogic: LogicConfig = {
       post: postDoc as PostView,
     };
 
-    const notifDocPath = `users/${postAuthorId}/notifications/${docId}`;
+    const notificationDocPath = `users/${postAuthorId}/notifications/${docId}`;
     const notificationLogicResultDoc: LogicResultDoc = {
       action: "create",
-      dstPath: notifDocPath,
+      dstPath: notificationDocPath,
       doc: notificationDoc,
     };
 
