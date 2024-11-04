@@ -5,7 +5,7 @@
 
 import {Entity} from "../db-structure";
 import {LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {getFileDataFromUrl, moveStorageFile} from "./utils";
+import {deleteStorageFile, getFileDataFromUrl, moveStorageFile} from "./utils";
 
 export const onUserUpdateLogic: LogicConfig = {
   name: "onUserUpdateLogic",
@@ -19,14 +19,28 @@ export const onUserUpdateLogic: LogicConfig = {
         docId,
       },
       modifiedFields,
+      document,
     } = action;
 
     const {avatarUrl} = modifiedFields;
 
     if (avatarUrl) {
+      const baseDstPath = `users/${docId}/profile-pictures`;
       const {fileExtension} = getFileDataFromUrl(avatarUrl);
+      const {avatarUrl: oldAvatarUrl} = document;
+
+      if (oldAvatarUrl) {
+        const {fileExtension: oldFileExtension} =
+          getFileDataFromUrl(oldAvatarUrl);
+        if (fileExtension !== oldFileExtension) {
+          const oldFileFullname = `${docId}.${oldFileExtension}`;
+          const oldFileDstPath = `${baseDstPath}/${oldFileFullname}`;
+          await deleteStorageFile(oldFileDstPath);
+        }
+      }
+
       const fileFullname = `${docId}.${fileExtension}`;
-      const fileDstPath = `users/${docId}/profile-pictures/${fileFullname}`;
+      const fileDstPath = `${baseDstPath}/${fileFullname}`;
       modifiedFields.avatarUrl = fileDstPath;
       await moveStorageFile(avatarUrl, fileDstPath);
     }

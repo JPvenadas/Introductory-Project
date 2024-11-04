@@ -10,10 +10,12 @@ initTestEmberflow();
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
-  "avatarUrl": `users/${userId}/profile-picture.jpeg`,
   "firstName": "Sample",
   "lastName": "User",
 };
+
+const oldAvatarUrl = `users/${userId}/profile-pictures/${userId}.jpeg`;
+const avatarUrl = "temp/sample-image.png";
 
 describe("onUserUpdateLogic", () => {
   const modifiedFields = {
@@ -39,15 +41,23 @@ describe("onUserUpdateLogic", () => {
 
   let getFileDataFromUrlSpy: jest.SpyInstance;
   let moveStorageFileSpy: jest.SpyInstance;
+  let deleteStorageFile: jest.SpyInstance;
 
   beforeEach(() => {
     getFileDataFromUrlSpy = jest.spyOn(utils, "getFileDataFromUrl")
-      .mockReturnValue({
-        filename: "sample-image",
-        fileExtension: "jpeg",
+      .mockImplementation((url) => {
+        return url === oldAvatarUrl ?
+          {filename: userId, fileExtension: "jpeg"} :
+          {filename: "sample-image", fileExtension: "png"};
       });
     moveStorageFileSpy = jest.spyOn(utils, "moveStorageFile")
       .mockResolvedValue();
+    deleteStorageFile = jest.spyOn(utils, "deleteStorageFile")
+      .mockResolvedValue();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it("should return finished logic result with 1 document", async () => {
@@ -70,7 +80,6 @@ describe("onUserUpdateLogic", () => {
 
   it("should return finished logic result to update avatarUrl",
     async () => {
-      const avatarUrl = "temp/sample-image.jpeg";
       const modifiedFieldsWithAvatar = {
         ...modifiedFields,
         avatarUrl: avatarUrl,
@@ -81,7 +90,7 @@ describe("onUserUpdateLogic", () => {
         modifiedFields: modifiedFieldsWithAvatar,
       };
 
-      const fileDstPath = `users/${userId}/profile-pictures/${userId}.jpeg`;
+      const fileDstPath = `users/${userId}/profile-pictures/${userId}.png`;
       const expectedUserDoc = {
         ...modifiedFields,
         avatarUrl: fileDstPath,
@@ -92,6 +101,44 @@ describe("onUserUpdateLogic", () => {
       expect(getFileDataFromUrlSpy).toHaveBeenCalledTimes(1);
       expect(moveStorageFileSpy).toHaveBeenCalledTimes(1);
       expect(getFileDataFromUrlSpy).toHaveBeenCalledWith(avatarUrl);
+      expect(moveStorageFileSpy).toHaveBeenCalledWith(avatarUrl, fileDstPath);
+      expect(result.documents[0]).toStrictEqual({
+        action: "merge",
+        dstPath: docPath,
+        doc: expectedUserDoc,
+      });
+    });
+
+  it("should return finished logic result to update avatarUrl with old url",
+    async () => {
+      const modifiedFieldsWithAvatar = {
+        ...modifiedFields,
+        avatarUrl: avatarUrl,
+      };
+
+      const newAction: Action = {
+        ...action,
+        modifiedFields: modifiedFieldsWithAvatar,
+        document: {
+          ...user,
+          avatarUrl: oldAvatarUrl,
+        },
+      };
+
+      const fileDstPath = `users/${userId}/profile-pictures/${userId}.png`;
+      const expectedUserDoc = {
+        ...modifiedFields,
+        avatarUrl: fileDstPath,
+      };
+
+      const result = await onUserUpdateLogic.logicFn(newAction);
+
+      expect(getFileDataFromUrlSpy).toHaveBeenCalledTimes(2);
+      expect(moveStorageFileSpy).toHaveBeenCalledTimes(1);
+      expect(getFileDataFromUrlSpy).toHaveBeenCalledWith(oldAvatarUrl);
+      expect(getFileDataFromUrlSpy).toHaveBeenCalledWith(avatarUrl);
+      expect(deleteStorageFile).toHaveBeenCalledTimes(1);
+      expect(deleteStorageFile).toHaveBeenCalledWith(oldAvatarUrl);
       expect(moveStorageFileSpy).toHaveBeenCalledWith(avatarUrl, fileDstPath);
       expect(result.documents[0]).toStrictEqual({
         action: "merge",
