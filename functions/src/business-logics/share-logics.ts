@@ -7,11 +7,6 @@ import {Notification, Post, User} from "../types";
 //  increment post sharesCount
 //  create a notification for post's author
 
-// TODO Use uid from eventContext to get the user's timeline path
-// create a notification document for notification logic result doc
-
-
-
 export const onShareLogic: LogicConfig = {
   name: "onShareLogic",
   actionTypes: ["create"],
