@@ -1,26 +1,26 @@
-import { admin, db } from "emberflow/lib";
-import { PostView, UserView } from "../../src/types";
-import { initTestEmberflow } from "../init-test-emberflow";
-import { Action, EventContext } from "emberflow/lib/types";
-import { firestore } from "firebase-admin";
-import { DocumentData, DocumentReference } from "firebase-admin/firestore";
-import { onLikeLogic } from "../../src/business-logics/like-logics";
+import {admin, db} from "emberflow/lib";
+import {PostView, UserView} from "../../src/types";
+import {initTestEmberflow} from "../init-test-emberflow";
+import {Action, EventContext, LogicResultDoc} from "emberflow/lib/types";
+import {firestore} from "firebase-admin";
+import {DocumentData, DocumentReference} from "firebase-admin/firestore";
+import {onLikeLogic, onUnlikeLogic} from "../../src/business-logics/like-logics";
 
 initTestEmberflow();
 
 const userId = "userId";
 const user: UserView = {
   "@id": userId,
-  avatarUrl: `users/${userId}/profile-picture.jpeg`,
-  firstName: "Sample",
-  lastName: "User",
+  "avatarUrl": `users/${userId}/profile-picture.jpeg`,
+  "firstName": "Sample",
+  "lastName": "User",
 };
 
 const postId = "postId";
 const post: PostView = {
   "@id": postId,
-  createdBy: user,
-  createdAt: admin.firestore.Timestamp.now().toDate(),
+  "createdBy": user,
+  "createdAt": admin.firestore.Timestamp.now().toDate(),
 };
 
 describe("onLikeLogic", () => {
@@ -40,7 +40,7 @@ describe("onLikeLogic", () => {
     status: "new",
     timeCreated: admin.firestore.Timestamp.now(),
   };
-  const expectedLikeDoc = { ...user };
+  const expectedLikeDoc = {...user};
 
   beforeEach(() => {
     jest.spyOn(admin.firestore.Timestamp, "now").mockReturnValue({
@@ -139,7 +139,7 @@ describe("onLikeLogic", () => {
   });
 
   it("should return finished logic result to create notification document", async () => {
-    const { createdBy } = post;
+    const {createdBy} = post;
     const notifDocPath = `users/${createdBy["@id"]}/notifications/${docId}`;
     const result = await onLikeLogic.logicFn(action);
 
