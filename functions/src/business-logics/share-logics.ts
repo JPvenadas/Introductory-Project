@@ -2,6 +2,7 @@ import {Action, LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {Entity} from "../db-structure";
 import {admin, db} from "emberflow/lib";
 import {Notification, Post, User} from "../types";
+import {createUserView} from "./utils";
 // TODO write onShareLogic
 //  copy post to user's timeline
 //  increment post sharesCount
@@ -80,10 +81,11 @@ export const onShareLogic: LogicConfig = {
       doc: notificationDoc,
     };
 
+    const userView = createUserView(user);
     const userLogicResultDoc: LogicResultDoc = {
       action: "create",
       dstPath: docPath,
-      doc: user,
+      doc: userView,
     };
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(timelineLogicResultDoc);
