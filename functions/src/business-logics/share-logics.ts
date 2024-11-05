@@ -18,6 +18,7 @@ export const onShareLogic: LogicConfig = {
       eventContext: {
         uid,
         docPath,
+        docId,
       },
       user,
     } = action;
@@ -67,7 +68,7 @@ export const onShareLogic: LogicConfig = {
     };
 
     const notificationDoc: Notification = {
-      "@id": "",
+      "@id": docId,
       "createdAt": admin.firestore.Timestamp.now().toDate(),
       "createdBy": user as User,
       "read": false,
