@@ -1,10 +1,15 @@
 import {Action, LogicConfig, LogicResultDoc} from "emberflow/lib/types";
 import {Entity} from "../db-structure";
-import {db} from "emberflow/lib";
+import {admin, db} from "emberflow/lib";
+import {Notification, Post, User} from "../types";
 // TODO write onShareLogic
 //  copy post to user's timeline
 //  increment post sharesCount
 //  create a notification for post's author
+
+// TODO Use uid from eventContext to get the user's timeline path
+// create a notification document for notification logic result doc
+
 
 
 export const onShareLogic: LogicConfig = {
@@ -15,10 +20,12 @@ export const onShareLogic: LogicConfig = {
   logicFn: async (action: Action) => {
     const {
       eventContext: {
+        uid,
         docPath,
       },
       user,
     } = action;
+
     const shareDocRef = db.doc(docPath);
     const postDocRef = shareDocRef.parent.parent;
 
@@ -48,27 +55,46 @@ export const onShareLogic: LogicConfig = {
         "@id": postAuthorId,
       },
     } = post;
+
     const timelineLogicResultDoc: LogicResultDoc = {
       action: "copy",
-      dstPath: `users/${user["@id"]}/timeline/${postId}`,
+      dstPath: `users/${uid}/timeline/${postId}`,
       srcPath: postDocRef.path,
     };
+
     const postLogicResultDoc: LogicResultDoc = {
-      action: "create",
-      dstPath: docPath,
+      action: "merge",
+      dstPath: postDocRef.path,
       instructions: {
         "sharesCount": "++",
       },
     };
 
+    const notificationDoc: Notification = {
+      "@id": "",
+      "createdAt": admin.firestore.Timestamp.now().toDate(),
+      "createdBy": user as User,
+      "read": false,
+      "type": "share",
+      "post": post as Post,
+    };
+
     const notificationLogicResultDoc: LogicResultDoc = {
       action: "create",
       dstPath: `users/${postAuthorId}/notifications/${postId}`,
+      doc: notificationDoc,
+    };
+
+    const userLogicResultDoc: LogicResultDoc = {
+      action: "create",
+      dstPath: docPath,
+      doc: user,
     };
     const logicResultDocs: LogicResultDoc[] = [];
     logicResultDocs.push(timelineLogicResultDoc);
     logicResultDocs.push(postLogicResultDoc);
     logicResultDocs.push(notificationLogicResultDoc);
+    logicResultDocs.push(userLogicResultDoc);
 
 
     return {
