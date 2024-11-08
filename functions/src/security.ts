@@ -14,8 +14,10 @@ const allAllowed: SecurityFn = async (
     status: "allowed",
   };
 };
-
 const userSecurityFn: SecurityFn = async (
+  entity,
+  docPath,
+  document,
   actionType,
   modifiedFields,
 ) => {
@@ -36,7 +38,6 @@ const userSecurityFn: SecurityFn = async (
         return rejected;
       }
     }
-    return rejected;
   }
   return allowed;
 };
@@ -48,4 +49,8 @@ export const securityConfig: SecurityConfig = {
   [Entity.Post]: allAllowed,
   [Entity.Comment]: allAllowed,
   [Entity.Like]: allAllowed,
+};
+
+export {
+  userSecurityFn,
 };
