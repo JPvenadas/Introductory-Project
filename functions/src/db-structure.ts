@@ -7,6 +7,7 @@ export enum Entity {
   Like = "like",
   Comment = "comment",
   Reply = "reply",
+  Share = "share",
   // Add your custom entities below
 }
 
@@ -49,6 +50,11 @@ export const dbStructure = {
       },
       likes: {
         [Entity.Like]: {
+          createdBy: view(Entity.User, UserViewProps),
+        },
+      },
+      shares: {
+        [Entity.Share]: {
           createdBy: view(Entity.User, UserViewProps),
         },
       },
