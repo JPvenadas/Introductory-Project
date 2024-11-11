@@ -20,41 +20,40 @@ export const onUserUpdateLogic: LogicConfig = {
         uid,
       },
       modifiedFields,
-      document: oldUser,
+      document: oldDocument,
     } = action;
 
     const {
-      avatarUrl: fileUrl,
+      avatarUrl: avatarUrl,
       ...fields
     } = modifiedFields;
 
     const newUserDoc: DocumentData = {...fields};
 
-    if (fileUrl) {
+    if (avatarUrl) {
       const {
         // filename: newFileName,
         fileExtension: newFileExtension,
-      } = getFileDataFromUrl(fileUrl);
+      } = getFileDataFromUrl(avatarUrl);
       const {
-        avatarUrl: oldFileUrl,
-      } = oldUser;
+        avatarUrl: oldAvatarUrl,
+      } = oldDocument;
 
-      if (oldFileUrl) {
+      if (oldAvatarUrl) {
         const {
           fileExtension: oldFileExtension,
-        }= getFileDataFromUrl(oldFileUrl);
+        }= getFileDataFromUrl(oldAvatarUrl);
 
 
         if (newFileExtension !== oldFileExtension) {
-          await deleteStorageFile(oldFileUrl);
+          await deleteStorageFile(oldAvatarUrl);
         }
       }
       const fileDstPath =
         `users/${uid}/profile-pictures/${docId}.${newFileExtension}`;
-      await moveStorageFile(fileUrl, fileDstPath);
+      await moveStorageFile(avatarUrl, fileDstPath);
 
-      // const {mimeType, size}= await getFileMetadata(fileUrl);
-      newUserDoc["avatarUrl"] = fileUrl;
+      newUserDoc["avatarUrl"] = fileDstPath;
     }
 
     const userLogicResultDoc: LogicResultDoc = {
@@ -74,7 +73,3 @@ export const onUserUpdateLogic: LogicConfig = {
     };
   },
 };
-
-
-// reject logic if may suername
-// delete old avatar url
