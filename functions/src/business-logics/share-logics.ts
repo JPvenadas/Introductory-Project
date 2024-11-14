@@ -1,8 +1,8 @@
-import {Action, LogicConfig, LogicResultDoc} from "emberflow/lib/types";
-import {Entity} from "../db-structure";
-import {admin, db} from "emberflow/lib";
-import {Notification, Post, User} from "../types";
-import {createUserView} from "./utils";
+import { Action, LogicConfig, LogicResultDoc } from "emberflow/lib/types";
+import { Entity } from "../db-structure";
+import { admin, db } from "emberflow/lib";
+import { Notification, Post, User } from "../types";
+import { createUserView } from "./utils";
 // TODO write onShareLogic
 //  copy post to user's timeline
 //  increment post sharesCount
@@ -15,11 +15,7 @@ export const onShareLogic: LogicConfig = {
   entities: [Entity.Share],
   logicFn: async (action: Action) => {
     const {
-      eventContext: {
-        uid,
-        docPath,
-        docId,
-      },
+      eventContext: { uid, docPath, docId },
       user,
     } = action;
 
@@ -48,9 +44,7 @@ export const onShareLogic: LogicConfig = {
 
     const {
       "@id": postId,
-      createdBy: {
-        "@id": postAuthorId,
-      },
+      createdBy: { "@id": postAuthorId },
     } = post;
 
     const timelineLogicResultDoc: LogicResultDoc = {
@@ -63,17 +57,17 @@ export const onShareLogic: LogicConfig = {
       action: "merge",
       dstPath: postDocRef.path,
       instructions: {
-        "sharesCount": "++",
+        sharesCount: "++",
       },
     };
 
     const notificationDoc: Notification = {
       "@id": docId,
-      "createdAt": admin.firestore.Timestamp.now().toDate(),
-      "createdBy": user as User,
-      "read": false,
-      "type": "share",
-      "post": post as Post,
+      createdAt: admin.firestore.Timestamp.now().toDate(),
+      createdBy: user as User,
+      read: false,
+      type: "share",
+      post: post as Post,
     };
 
     const notificationLogicResultDoc: LogicResultDoc = {
@@ -93,7 +87,6 @@ export const onShareLogic: LogicConfig = {
     logicResultDocs.push(postLogicResultDoc);
     logicResultDocs.push(notificationLogicResultDoc);
     logicResultDocs.push(userLogicResultDoc);
-
 
     return {
       name: "onShareLogic",
